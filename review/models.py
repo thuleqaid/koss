@@ -7,7 +7,7 @@ from django.utils.encoding import python_2_unicode_compatible
 class BaseVersionTable(models.Model):
 	code        = models.CharField(max_length=20)
 	version     = models.PositiveIntegerField(default=1)
-	update_time = models.DateTimeField()
+	update_time = models.DateTimeField(auto_now_add=True)
 	def splitCode(self):
 		idx = self.code.index('#')
 		return self.code[0:idx], self.code[idx+1:]
@@ -26,6 +26,7 @@ class BaseVersionTable(models.Model):
 		return tablename.lower()
 	class Meta:
 		abstract = True
+		#unique_together = [['code', 'version'],]
 
 @python_2_unicode_compatible
 class CheckItem(BaseVersionTable):
@@ -34,4 +35,6 @@ class CheckItem(BaseVersionTable):
 	details = models.TextField(default='')
 	def __str__(self):
 		return self.strPrefix()+self.title
+	class Meta:
+		unique_together = [['code', 'version'],]
 
