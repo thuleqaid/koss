@@ -1,31 +1,13 @@
-数据表设计
-	基类（HistoryTable）
-		通过追加记录的方式来保存修改记录
-			relid：
-				对于最早的记录，这个字段保存最新记录的id
-				对于修改过程中的记录（含最新记录），这个字段保存最早记录的id
-数据表关系
-	检查项目
-		一个检查项目至少需要一个标题，可以包含一个详细说明（计划采用Markdown形式），一个详细说明可以包含多个图片附件
-		CheckItem:CheckItemDetail=1:?
-		CheckItemDetail:CheckItemAttach=1:*
-	检查项目分组
-		一个分组需要包含至少一个项目
-		CheckGroup:CheckGroupDetail=1:+
-		CheckGroupDetail:CheckItem=1:1
-	※所有A:B的关系中，B要求记录A的最早记录id，这样A的变化就不会影响B了
-	检查结果
-		CheckGroup:CheckGroupResult=1:*
-		CheckItem:CheckItemResult=1:*
-		CheckGroupResult:CheckItemResult=1:+
-		CheckItemResult不允许变更
-		CheckGroupResult的变更（Group中加入新的Item，或者Item发生变化，或者Item的检查结果变化）导致CheckListResult的变更
-	检查结果表
-		CheckListResult:CheckGroupResult=1:+
-	※所有A:B的关系中，B要求记录A的最新记录id，这样A的变化就不会影响B了
-	项目表
-		Project:ActionItem=1:+
-		ActionItemType:ActionItem=1:*
-		ActionItemType:ActionStep=1:+
-		ActionStep:CheckGroup=1:+
+## 工作流
+1. 新建Project
+2. 添加人员，设置分组（可选）
+3. 配置Checklist
 
+## 配置Checklist
+设计方针
+* CheckItem只含有检查内容，不包括回答选项
+* CheckItem在所有Project之间共用
+* Project之间，CheckGroup不共用
+* CheckGroup以JSON方式保存组内所有CheckItem
+* Project之间，Checklist不共用
+* Checklist包含所有CheckGroup和回答配置方案

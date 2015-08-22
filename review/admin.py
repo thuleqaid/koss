@@ -3,6 +3,6 @@ from .models import CheckItem
 
 # Register your models here.
 class CheckItemAdmin(admin.ModelAdmin):
-	fields = ['title', 'update_time', 'relid']
+	fields = ['title', 'code', 'version', 'update_time']
 
 admin.site.register(CheckItem, CheckItemAdmin)
