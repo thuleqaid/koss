@@ -1,0 +1,24 @@
+{% extends 'review/base.html' %}
+
+{% block title %}Project List{% endblock %}
+
+{% block body %}
+<div class="container">
+	<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+			</div>
+	<table class="table table-hover table-striped">
+		<thead>
+			<td><a href="{% url 'review:projectedit' 0 %}"><abbr title="New Project"><span class="glyphicon glyphicon-plus"></span></abbr></a>Title</td>
+			<td>Status</td>
+		</thead>
+		<tbody>
+		{% for prj in projects %}
+			<tr>
+				<td><a href="{% url 'review:projectview' prj.id %}">{{ prj.title }}</a></td>
+				<td>{{ prj.status }}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+</div>
+{% endblock %}

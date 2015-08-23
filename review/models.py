@@ -30,6 +30,15 @@ class BaseVersionTable(models.Model):
                     break
         return same
     @classmethod
+    def nextCode(cls, category):
+        codes = cls.objects.filter(code__startswith='%s#'%(category,)).order_by('-code')[:1]
+        if len(codes) > 0:
+            code1, code2 = codes[0].splitCode()
+            code2 += 1
+        else:
+            code2 = 1
+        return code2
+    @classmethod
     def latest(cls, where=''):
         return cls.objects.raw('SELECT *, Max(version) FROM %s %s GROUP BY code'%(cls.getTableName(), where))
     @classmethod
@@ -44,6 +53,7 @@ class BaseVersionTable(models.Model):
 @python_2_unicode_compatible
 class Project(BaseVersionTable):
     #author = models.ForeignKey(User)
+    DefaultCategory = 'PRJ'
     StatusOpen   = 'OP'
     StatusClosed = 'ED'
     StatusChoice = ((StatusOpen, 'Open'), (StatusClosed, 'Closed'),)
