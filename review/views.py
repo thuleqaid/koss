@@ -1,4 +1,5 @@
 import json
+import csv
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
@@ -10,6 +11,16 @@ from .forms import *
 def index(request):
     prjs = Project.latest()
     return render(request, 'review/index.html', {'projects':prjs,})
+
+def importchkitm(request):
+    if request.method == 'POST':
+        if request.POST['excel_tab']:
+            data=request.POST['excel_tab'].encode('utf-8').splitlines()
+            cread = csv.reader(data, 'excel')
+            for row in cread:
+                print('\t'.join(row))
+            return HttpResponse('ok')
+    return render(request, 'review/importchkitm.html', {})
 
 def projectedit(request, projectid):
     if request.method == 'POST':

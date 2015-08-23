@@ -1,0 +1,18 @@
+{% extends 'review/base.html' %}
+
+{% block title %}
+Import CheckItem
+{% endblock %}
+
+{% block body %}
+<div class="container">
+	<form class="form" action="{% url 'review:importcheckitem' %}" method="POST">
+		{% csrf_token %}
+		<div class="form-group">
+			<label for="excel_tab" class="control-label">CheckItems</label>
+			<textarea class="form-control" name="excel_tab" id="excel_tab" rows="9"></textarea>
+		</div>
+		<button type="submit" class="btn btn-primary">OK</button>
+	</form>
+</div>
+{% endblock %}
