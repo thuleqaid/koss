@@ -1,0 +1,30 @@
+{% extends 'review/base.html' %}
+
+{% block title %}
+Preview Import CheckItem
+{% endblock %}
+
+{% block body %}
+<div class="container">
+	<form class="form" action="{% url 'review:importcheckitem' %}" method="POST">
+		{% csrf_token %}
+		<table class="table">
+			<thead>
+				<th>Category</th>
+				<th>Title</th>
+				<th>Details</th>
+			</thead>
+			<tbody>
+				{% for row in data %}
+				<tr>
+					<td>{{ row.0 }}</td>
+					<td>{{ row.1 }}</td>
+					<td>{{ row.2 }}</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<button type="submit" class="btn btn-primary">OK</button>
+	</form>
+</div>
+{% endblock %}

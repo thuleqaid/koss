@@ -17,11 +17,7 @@ def importchkitm(request):
         if request.POST['excel_tab']:
             data=request.POST['excel_tab'].splitlines()
             cread = CSVReader(data)
-            for idx,row in enumerate(cread):
-                print(idx)
-                for cell in row:
-                    print('\t'+cell)
-            return HttpResponse('ok')
+            return render(request, 'review/previewchkitm.html', {'data':cread,})
     return render(request, 'review/importchkitm.html', {})
 
 def projectedit(request, projectid):

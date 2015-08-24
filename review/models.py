@@ -97,9 +97,13 @@ class CheckGroup(BaseVersionTable):
 
 @python_2_unicode_compatible
 class CheckItem(BaseVersionTable):
+    ScopeGlobal= 'G'
+    ScopeLocal = 'L'
+    ScopeChoice = ((ScopeGlobal, 'Global'), (ScopeLocal, 'Local'),)
     #author = models.ForeignKey(User)
     title = models.CharField(max_length=240)
     details = models.TextField(default='')
+    scope = models.CharField(max_length=1, choices=ScopeChoice, default=ScopeGlobal)
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:

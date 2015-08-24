@@ -34,13 +34,19 @@ class CSVReader(object):
                 else:
                     self._data.append([])
                     self._data[-1].extend(parts[:-1])
-                    if parts[-1].startswith('"') and not parts[-1].endswith('"'):
-                        flag_cell = True
-                        cell_data = parts[-1]
+                    if parts[-1].startswith('"'):
+                        if len(parts[-1]) > 1 and parts[-1].endswith('"'):
+                            self._data[-1].append(parts[-1][1:-1])
+                        else:
+                            flag_cell = True
+                            cell_data = parts[-1]
                     else:
                         self._data[-1].append(parts[-1])
+        else:
+            if flag_cell:
+                cell_data = cell_data+self.CONST_LINETERMINATOR_INSERT
         if flag_cell:
-            self._data[-1].append(cell_data[1:])
+            self._data[-1].append(cell_data)
     def __len__(self):
         return len(self._data)
     def __getitem__(self, idx):
