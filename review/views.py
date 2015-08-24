@@ -1,11 +1,11 @@
 import json
-import csv
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 from .models import *
 from .forms import *
+from .utils import *
 
 # Create your views here.
 def index(request):
@@ -15,10 +15,12 @@ def index(request):
 def importchkitm(request):
     if request.method == 'POST':
         if request.POST['excel_tab']:
-            data=request.POST['excel_tab'].encode('utf-8').splitlines()
-            cread = csv.reader(data, 'excel')
-            for row in cread:
-                print('\t'.join(row))
+            data=request.POST['excel_tab'].splitlines()
+            cread = CSVReader(data)
+            for idx,row in enumerate(cread):
+                print(idx)
+                for cell in row:
+                    print('\t'+cell)
             return HttpResponse('ok')
     return render(request, 'review/importchkitm.html', {})
 
