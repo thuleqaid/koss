@@ -10,7 +10,7 @@ Project New
 
 {% block body %}
 <div class="container">
-	<form class="form" action="{% url 'review:projectedit' projectid %}" method="POST">
+	<form class="form" action="{% url 'review:projectedit' projectcode %}" method="POST">
 		{% csrf_token %}
 		{% if form.version.errors %}
 		<ul class="text-danger">

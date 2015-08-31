@@ -14,7 +14,7 @@
 		<tbody>
 		{% for prj in projects %}
 			<tr>
-				<td><a href="{% url 'review:projectview' prj.id %}">{{ prj.title }}</a></td>
+				<td><a href="{% url 'review:projectview' prj.code %}">{{ prj.title }}</a></td>
 				<td>{{ prj.status }}</td>
 			</tr>
 		{% endfor %}

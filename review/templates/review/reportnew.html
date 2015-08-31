@@ -1,0 +1,68 @@
+{% extends 'review/base.html' %}
+
+{% block title %}New Report{% endblock %}
+
+{% block body %}
+<div class="container">
+	<form class="form" action="{% url 'review:reportnew' checklist.code %}" method="POST">
+		{% csrf_token %}
+		{% for groupinfo in form %}
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" href="#collapse{{ groupinfo.group.id }}">{{ groupinfo.group.title }}</a>
+					</h4>
+				</div>
+				<div id="collapse{{ groupinfo.group.id }}" class="panel panel-collapse collapse">
+					<div class="panel-body">
+						{% for item in groupinfo.item %}
+							<div class="form-group">
+								{{ item.0.title }}
+								<div class="form-control">
+									{% for radio in item.0.choice %}
+									<label class="radio-inline" for="{{ radio.id_for_label }}">{{ radio.tag }}{{ radio.choice_label }}</label>
+									{% endfor %}
+								</div>
+								<div class="panel-group" id="accordion{{ groupinfo.group.id }}-{{ forloop.counter }}">
+								{% for bugform in item.1 %}
+									<div class="panel panel-default">
+										<div class="panel-heading">
+											<h4 class="panel-title">
+												<a data-toggle="collapse" data-parent="#accordion{{ groupinfo.group.id }}-{{ forloop.parentloop.counter }}" href="#collapse{{ groupinfo.group.id }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">指摘{{ forloop.counter }}</a>
+												{% ifequal forloop.counter 1 %}
+													<a class="pull-right" href="#"><span class="glyphicon glyphicon-plus"></span></a>
+												{% else %}
+													<a class="pull-right" href="#"><span class="glyphicon glyphicon-remove"></span></a>
+												{% endifequal %}
+											</h4>
+										</div>
+										<div id="collapse{{ groupinfo.group.id }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" class="panel panel-collapse collapse">
+											<div class="panel-body">
+												{% for field in bugform %}
+													<label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}</label>
+													{{ field }}
+													{% if field.errors %}
+													<span class="help-block">
+													<ul class="text-danger">
+														{% for error in field.errors %}
+															<li>{{ error }}</li>
+														{% endfor %}
+													</ul>
+													</span>
+													{% endif %}
+												{% endfor %}
+											</div>
+										</div>
+									</div>
+								{% endfor %}
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+		<button type="submit" class="btn btn-primary">OK</button>
+	</form>
+</div>
+{% endblock %}

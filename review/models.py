@@ -2,22 +2,26 @@ import json
 import collections
 import logging
 from django.db import models
-from django.db.models import Max
+from django.db.models import Max, Min
 from django.contrib.auth.models import User
 from django.utils.encoding import python_2_unicode_compatible
 
 logger = logging.getLogger('review')
 # Create your models here.
 CONST_CODE_LEN = 63
+CONST_CODE_NUMBER_LEN = 8
 class BaseVersionTable(models.Model):
     code        = models.CharField(max_length=CONST_CODE_LEN)
     version     = models.PositiveIntegerField(default=1)
     update_time = models.DateTimeField(auto_now_add=True)
     def splitCode(self):
-        idx = self.code.index('#')
+        #idx = self.code.index('#')
+        idx = len(self.code) - CONST_CODE_NUMBER_LEN - 1
         return self.code[0:idx], int(self.code[idx+1:])
     def setCode(self,category,no):
-        self.code = '%s#%08d'%(category,no)
+        #fmt = '%s%#0'+str(CONST_CODE_NUMBER_LEN)+'d'
+        fmt = '%s%0'+str(CONST_CODE_NUMBER_LEN)+'d'
+        self.code = fmt%(category,no)
     def strPrefix(self):
         return '[%d][%s][%d]'%(self.id,self.code,self.version)
     def isEqual(self, other, *excludeFields):
@@ -31,13 +35,16 @@ class BaseVersionTable(models.Model):
         return same
     @classmethod
     def nextCode(cls, category):
-        codes = cls.objects.filter(code__startswith='%s#'%(category,)).order_by('-code')[:1]
+        codes = cls.objects.filter(code__startswith='%s'%(category,)).order_by('-code')[:1]
         if len(codes) > 0:
             code1, code2 = codes[0].splitCode()
             code2 += 1
         else:
             code2 = 1
         return code2
+    @classmethod
+    def oldest(cls, where=''):
+        return cls.objects.raw('SELECT *, Min(version) FROM %s %s GROUP BY code'%(cls.getTableName(), where))
     @classmethod
     def latest(cls, where=''):
         return cls.objects.raw('SELECT *, Max(version) FROM %s %s GROUP BY code'%(cls.getTableName(), where))
@@ -52,11 +59,11 @@ class BaseVersionTable(models.Model):
 
 @python_2_unicode_compatible
 class Project(BaseVersionTable):
-    #author = models.ForeignKey(User)
     DefaultCategory = 'PRJ'
     StatusOpen   = 'OP'
     StatusClosed = 'ED'
     StatusChoice = ((StatusOpen, 'Open'), (StatusClosed, 'Closed'),)
+    #author = models.ForeignKey(User)
     title = models.CharField(max_length=240)
     status = models.CharField(max_length=2, choices=StatusChoice, default=StatusOpen)
     def __str__(self):
@@ -65,8 +72,24 @@ class Project(BaseVersionTable):
         unique_together = [['code', 'version'],]
 
 @python_2_unicode_compatible
+class CheckList(BaseVersionTable):
+    GroupItem = collections.namedtuple('GroupItem', ['valid','code','version','id'])
+    ChoiceItem = collections.namedtuple('ChoiceItem', ['valid','type','text'])
+    InputConfig = collections.namedtuple('InputConfig', ['valid','order','type','label','labeltext','extra'])
+    BugStatus = collections.namedtuple('BugStatus', ['valid','order','text'])      # valid only if InputConfig is not empty
+    BugCategory = collections.namedtuple('BugCategory', ['valid','order','text'])  # valid only if InputConfig is not empty
+    #author = models.ForeignKey(User)
+    project = models.CharField(max_length=CONST_CODE_LEN)
+    title = models.CharField(max_length=240)
+    groups = models.TextField(default=json.dumps([])) # list of GroupItem
+    choices = models.TextField(default=json.dumps([ChoiceItem(True,'IGNORE','関係なし'), ChoiceItem(True, 'OK', 'OK'), ChoiceItem(True, 'NG', '問題あり')])) # check item choices
+    bugstatus = models.TextField(default=json.dumps([BugStatus(True, 1, 'Modifying'), BugStatus(True, 2, 'Waiting Confirm'), BugStatus(True, 3, 'Done')]))
+    bugcategory= models.TextField(default=json.dumps([BugCategory(True, 1, 'Format'), BugCategory(True, 2, 'Function')]))
+    userdata = models.TextField(default=json.dumps([InputConfig(True, 1, 'TextArea', 'Question', '指摘', ''), InputConfig(True, 2, 'TextArea', 'Answer', '対策', '')]))
+
+@python_2_unicode_compatible
 class CheckGroup(BaseVersionTable):
-    GroupDetailItem = collections.namedtuple('GroupDetailItem', ['valid','code','version'])
+    GroupDetailItem = collections.namedtuple('GroupDetailItem', ['valid','code','version','id'])
     #author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN)
     title = models.CharField(max_length=240)
@@ -82,11 +105,21 @@ class CheckGroup(BaseVersionTable):
             logger.error('CheckGroup[%s] contains multiple item[%s]'%(self.strPrefix(), itemcode))
             return validlist[0]
     @staticmethod
+    def uniqueDetails(detaillist):
+        outdict = collections.OrderedDict()
+        for item in detaillist:
+            if item.code in outdict:
+                if item.version > outdict[item.code].version:
+                    outdict[item.code] = item
+            else:
+                outdict[item.code] = item
+        return [x[1] for x in sorted(outdict.items(), key=lambda t:t[0])]
+    @staticmethod
     def staticContains(detailstr, itemcode):
         return [x for x in unpackDetails(detailstr) if x.code == itemcode]
     @staticmethod
     def packDetails(detaillist):
-        return json.dumps(detaillist)
+        return json.dumps(CheckGroup.uniqueDetails(detaillist))
     @staticmethod
     def unpackDetails(detailstr):
         return [GroupDetailItem(*x) for x in json.loads(detailstr)]
@@ -96,14 +129,22 @@ class CheckGroup(BaseVersionTable):
         unique_together = [['code', 'version'],]
 
 @python_2_unicode_compatible
+class CheckGroupResult(BaseVersionTable):
+    Result = collections.namedtuple('Result', ['code','version','status','category'])
+    listcode = models.CharField(max_length=CONST_CODE_LEN)
+    listversion = models.PositiveIntegerField()
+    groupcode = models.CharField(max_length=CONST_CODE_LEN)
+    groupversion = models.PositiveIntegerField()
+    status = models.CharField(max_length=CONST_CODE_LEN)
+    summary = models.TextField(json.dumps([])) # count of each choice
+    buglist = models.TextField(json.dumps([])) # list of Result
+
+@python_2_unicode_compatible
 class CheckItem(BaseVersionTable):
-    ScopeGlobal= 'G'
-    ScopeLocal = 'L'
-    ScopeChoice = ((ScopeGlobal, 'Global'), (ScopeLocal, 'Local'),)
     #author = models.ForeignKey(User)
+    project = models.CharField(max_length=CONST_CODE_LEN, default='')
     title = models.CharField(max_length=240)
     details = models.TextField(default='')
-    scope = models.CharField(max_length=1, choices=ScopeChoice, default=ScopeGlobal)
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:
