@@ -74,18 +74,16 @@ class Project(BaseVersionTable):
 @python_2_unicode_compatible
 class CheckList(BaseVersionTable):
     GroupItem = collections.namedtuple('GroupItem', ['valid','code','version','id'])
-    ChoiceItem = collections.namedtuple('ChoiceItem', ['valid','type','text'])
-    InputConfig = collections.namedtuple('InputConfig', ['valid','order','type','label','labeltext','extra'])
-    BugStatus = collections.namedtuple('BugStatus', ['valid','order','text'])      # valid only if InputConfig is not empty
-    BugCategory = collections.namedtuple('BugCategory', ['valid','order','text'])  # valid only if InputConfig is not empty
+    ChoiceItem = collections.namedtuple('ChoiceItem', ['valid','value','text'])
+    BugStatus = collections.namedtuple('BugStatus', ['valid','value','text'])
+    BugCategory = collections.namedtuple('BugCategory', ['valid','value','text'])
     #author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN)
     title = models.CharField(max_length=240)
     groups = models.TextField(default=json.dumps([])) # list of GroupItem
-    choices = models.TextField(default=json.dumps([ChoiceItem(True,'IGNORE','関係なし'), ChoiceItem(True, 'OK', 'OK'), ChoiceItem(True, 'NG', '問題あり')])) # check item choices
-    bugstatus = models.TextField(default=json.dumps([BugStatus(True, 1, 'Modifying'), BugStatus(True, 2, 'Waiting Confirm'), BugStatus(True, 3, 'Done')]))
-    bugcategory= models.TextField(default=json.dumps([BugCategory(True, 1, 'Format'), BugCategory(True, 2, 'Function')]))
-    userdata = models.TextField(default=json.dumps([InputConfig(True, 1, 'TextArea', 'Question', '指摘', ''), InputConfig(True, 2, 'TextArea', 'Answer', '対策', '')]))
+    choices = models.TextField(default=json.dumps([ChoiceItem(True,'IG','関係なし'), ChoiceItem(True, 'OK', 'OK'), ChoiceItem(True, 'NG', '問題あり')])) # check item choices
+    bugstatus = models.TextField(default=json.dumps([BugStatus(True, 'P1', '修正中'), BugStatus(True, 'P2', '確認待ち'), BugStatus(True, 'F1', '完成'), BugStatus(True, 'F2', '変更不要'), BugStatus(True, 'F3', '転記')]))
+    bugcategory= models.TextField(default=json.dumps([BugCategory(True, 'A1', '機能不具合'), BugCategory(True, 'E1', '成果物不具合'),]))
 
 @python_2_unicode_compatible
 class CheckGroup(BaseVersionTable):
@@ -129,17 +127,6 @@ class CheckGroup(BaseVersionTable):
         unique_together = [['code', 'version'],]
 
 @python_2_unicode_compatible
-class CheckGroupResult(BaseVersionTable):
-    Result = collections.namedtuple('Result', ['code','version','status','category'])
-    listcode = models.CharField(max_length=CONST_CODE_LEN)
-    listversion = models.PositiveIntegerField()
-    groupcode = models.CharField(max_length=CONST_CODE_LEN)
-    groupversion = models.PositiveIntegerField()
-    status = models.CharField(max_length=CONST_CODE_LEN)
-    summary = models.TextField(json.dumps([])) # count of each choice
-    buglist = models.TextField(json.dumps([])) # list of Result
-
-@python_2_unicode_compatible
 class CheckItem(BaseVersionTable):
     #author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN, default='')
@@ -150,3 +137,40 @@ class CheckItem(BaseVersionTable):
     class Meta:
         unique_together = [['code', 'version'],]
 
+@python_2_unicode_compatible
+class CheckListResult(BaseVersionTable):
+    title = models.CharField(max_length=240)
+    listcode = models.CharField(max_length=CONST_CODE_LEN)
+    listversion = models.PositiveIntegerField()
+    groupcount = models.PositiveIntegerField()
+    def __str__(self):
+        return self.strPrefix()+self.title
+    class Meta:
+        unique_together = [['code', 'version'],]
+
+@python_2_unicode_compatible
+class CheckGroupResult(BaseVersionTable):
+    Result = collections.namedtuple('Result', ['code','version','status','level'])
+    checklist = models.ForeignKey(CheckListResult)
+    groupcode = models.CharField(max_length=CONST_CODE_LEN)
+    groupversion = models.PositiveIntegerField()
+    status = models.CharField(max_length=CONST_CODE_LEN)
+    summary = models.TextField(json.dumps([])) # count of each choice
+    buglist = models.TextField(json.dumps([])) # list of Result
+    def __str__(self):
+        return self.strPrefix()+self.status
+    class Meta:
+        unique_together = [['code', 'version'],]
+
+@python_2_unicode_compatible
+class CheckBugItem(BaseVersionTable):
+    itemcode = models.CharField(max_length=CONST_CODE_LEN)
+    itemversion = models.PositiveIntegerField()
+    question = models.TextField()
+    answer = models.TextField(default = '')
+    status = models.CharField(max_length=CONST_CODE_LEN)
+    level = models.CharField(max_length=CONST_CODE_LEN)
+    def __str__(self):
+        return self.strPrefix()+self.status
+    class Meta:
+        unique_together = [['code', 'version'],]
