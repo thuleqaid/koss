@@ -2,16 +2,15 @@
 {% load staticfiles %}
 
 {% block title %}
-Preview Import CheckItem
+Preview Sub Projects
 {% endblock %}
 
 {% block body %}
 <div class="container">
-	<form class="form" action="{% url 'review:importcheckitem' projectcode %}" method="POST">
+	<form class="form" action="{% url 'review:addsubproject' projectcode %}" method="POST">
 		{% csrf_token %}
 		<table class="table">
 			<thead>
-				<th>Category</th>
 				<th>Title</th>
 				<th>Details</th>
 			</thead>
@@ -19,8 +18,7 @@ Preview Import CheckItem
 				{% for row in data %}
 				<tr>
 					<td>{{ row.0 }}</td>
-					<td>{{ row.1 }}</td>
-					<td><div class="markdown">{{ row.2 }}</div></td>
+					<td><div class="markdown">{{ row.1 }}</div></td>
 				</tr>
 				{% endfor %}
 			</tbody>

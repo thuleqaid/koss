@@ -17,7 +17,7 @@ class BaseVersionTable(models.Model):
     def splitCode(self):
         #idx = self.code.index('#')
         idx = len(self.code) - CONST_CODE_NUMBER_LEN - 1
-        return self.code[0:idx], int(self.code[idx+1:])
+        return self.code[0:idx+1], int(self.code[idx+1:])
     def setCode(self,category,no):
         #fmt = '%s%#0'+str(CONST_CODE_NUMBER_LEN)+'d'
         fmt = '%s%0'+str(CONST_CODE_NUMBER_LEN)+'d'
@@ -72,6 +72,17 @@ class Project(BaseVersionTable):
         unique_together = [['code', 'version'],]
 
 @python_2_unicode_compatible
+class SubProject(BaseVersionTable):
+    #author = models.ForeignKey(User)
+    project = models.CharField(max_length=CONST_CODE_LEN, default='')
+    title = models.CharField(max_length=240)
+    details = models.TextField(default='')
+    def __str__(self):
+        return self.strPrefix()+self.title
+    class Meta:
+        unique_together = [['code', 'version'],]
+
+@python_2_unicode_compatible
 class CheckList(BaseVersionTable):
     GroupItem = collections.namedtuple('GroupItem', ['valid','code','version','id'])
     ChoiceItem = collections.namedtuple('ChoiceItem', ['valid','value','text'])
@@ -80,10 +91,15 @@ class CheckList(BaseVersionTable):
     #author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN)
     title = models.CharField(max_length=240)
+    selfcheck = models.BooleanField(default=False)
     groups = models.TextField(default=json.dumps([])) # list of GroupItem
     choices = models.TextField(default=json.dumps([ChoiceItem(True,'IG','関係なし'), ChoiceItem(True, 'OK', 'OK'), ChoiceItem(True, 'NG', '問題あり')])) # check item choices
     bugstatus = models.TextField(default=json.dumps([BugStatus(True, 'P1', '修正中'), BugStatus(True, 'P2', '確認待ち'), BugStatus(True, 'F1', '完成'), BugStatus(True, 'F2', '変更不要'), BugStatus(True, 'F3', '転記')]))
     bugcategory= models.TextField(default=json.dumps([BugCategory(True, 'A1', '機能不具合'), BugCategory(True, 'E1', '成果物不具合'),]))
+    def __str__(self):
+        return self.strPrefix()+self.title
+    class Meta:
+        unique_together = [['code', 'version'],]
 
 @python_2_unicode_compatible
 class CheckGroup(BaseVersionTable):
@@ -114,13 +130,13 @@ class CheckGroup(BaseVersionTable):
         return [x[1] for x in sorted(outdict.items(), key=lambda t:t[0])]
     @staticmethod
     def staticContains(detailstr, itemcode):
-        return [x for x in unpackDetails(detailstr) if x.code == itemcode]
+        return [x for x in CheckGroup.unpackDetails(detailstr) if x.code == itemcode]
     @staticmethod
     def packDetails(detaillist):
         return json.dumps(CheckGroup.uniqueDetails(detaillist))
     @staticmethod
     def unpackDetails(detailstr):
-        return [GroupDetailItem(*x) for x in json.loads(detailstr)]
+        return [CheckGroup.GroupDetailItem(*x) for x in json.loads(detailstr)]
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:
@@ -139,10 +155,13 @@ class CheckItem(BaseVersionTable):
 
 @python_2_unicode_compatible
 class CheckListResult(BaseVersionTable):
+    #author = models.ForeignKey(User)
+    subproject = models.CharField(max_length=CONST_CODE_LEN, default='')
     title = models.CharField(max_length=240)
     listcode = models.CharField(max_length=CONST_CODE_LEN)
     listversion = models.PositiveIntegerField()
     groupcount = models.PositiveIntegerField()
+    groups     = models.TextField(default=json.dumps([]))
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:
@@ -150,12 +169,15 @@ class CheckListResult(BaseVersionTable):
 
 @python_2_unicode_compatible
 class CheckGroupResult(BaseVersionTable):
-    Result = collections.namedtuple('Result', ['code','version','status','level'])
-    checklist = models.ForeignKey(CheckListResult)
+    Result = collections.namedtuple('Result', ['code','version','status','level','itemcode'])
+    Choice = collections.namedtuple('Choice', ['code','version','id','choice'])
+    groupid = models.PositiveIntegerField()
     groupcode = models.CharField(max_length=CONST_CODE_LEN)
     groupversion = models.PositiveIntegerField()
+    grouptitle = models.CharField(max_length=240)
     status = models.CharField(max_length=CONST_CODE_LEN)
     summary = models.TextField(json.dumps([])) # count of each choice
+    choices = models.TextField(json.dumps([])) # list of Choice
     buglist = models.TextField(json.dumps([])) # list of Result
     def __str__(self):
         return self.strPrefix()+self.status

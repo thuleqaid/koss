@@ -12,29 +12,45 @@
 			</a>
 		</h2>
 	</div>
+	<ul>
+		<li><a href="{% url 'review:importcheckitem' project.code %}">Import CheckItems</a></li>
+		<li><a href="{% url 'review:managecheckgroup' project.code %}">Manage CheckGroups</a></li>
+		<li><a href="{% url 'review:managechecklist' project.code %}">Manage CheckLists</a></li>
+		<li><a href="{% url 'review:addsubproject' project.code %}">Add Subprojects</a></li>
+	</ul>
+	<h4>Checklist List:</h4>
 	<table class="table table-hover table-striped">
 		<thead>
-			<td>Title</td><td>Detail</td>
+			<td>Title</td><td>Groups</td><td>SelfCheck</td>
 		</thead>
 		<tbody>
-		{% for grp in groups %}
+		{% for chk in checklists %}
 			<tr>
-				<td>{{ grp.title }}</td>
-				<td>{{ grp.details }}</td>
+				<td>{{ chk.title }}</td>
+				<td>
+					<ul>
+					{% for grp in chk.groups %}
+						<li>{{ grp.title }}</li>
+					{% endfor %}
+					</ul>
+				</td>
+				<td>{{ chk.selfcheck }}</td>
 			</tr>
 		{% endfor %}
 		</tbody>
 	</table>
+	<h4>SubProjects List:</h4>
 	<table class="table table-hover table-striped">
 		<thead>
-			<td>Title</td><td>Group</td><td>Choice</td>
+			<td>Title</td><td>Details</td>
 		</thead>
 		<tbody>
-		{% for chk in checks %}
+		{% for subp in subprojects %}
 			<tr>
-				<td><a href="{% url 'review:reportnew' chk.code %}"><abbr title="New Report"><span class="glyphicon glyphicon-plus"></span></abbr></a>{{ chk.title }}</td>
-				<td>{{ chk.groups }}</td>
-				<td>{{ chk.choices }}</td>
+				<td><a href="{% url 'review:subproject' subp.code %}">{{ subp.title }}</a></td>
+				<td>
+					{{ subp.details }}
+				</td>
 			</tr>
 		{% endfor %}
 		</tbody>

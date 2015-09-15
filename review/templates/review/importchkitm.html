@@ -6,7 +6,7 @@ Import CheckItem
 
 {% block body %}
 <div class="container">
-	<form class="form" action="{% url 'review:importcheckitem' %}" method="POST">
+	<form class="form" action="{% url 'review:importcheckitem' projectcode %}" method="POST">
 		{% csrf_token %}
 		<div class="form-group">
 			<label for="excel_tab" class="control-label">CheckItems</label>
@@ -29,7 +29,7 @@ Import CheckItem
 				</table>
 			</span>
 		</div>
-		<button type="submit" class="btn btn-primary">OK</button>
+		<button type="submit" class="btn btn-primary">Preview</button>
 	</form>
 </div>
 {% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'review/base.html' %}
+
+{% block title %}Manage CheckLists{% endblock %}
+
+{% block body %}
+<div class="container">
+	<form class="form" action="{% url 'review:managechecklist' projectcode %}" method="POST">
+		{% csrf_token %}
+		<table class="table table-hover table-striped">
+			<thead>
+				<td>Group</td>
+				{% for lst in lists %}
+					<td>{{ lst.title }}</td>
+				{% endfor %}
+			</thead>
+			<tbody>
+				{% for row in data %}
+					<tr>
+						<td>{{ row.group.title }}</td>
+						{% for lst in row.lists %}
+							<td>
+								<div class="switch">
+									{% if lst %}
+										<input type="checkbox" name="chk-{{row.group.id}}-{{forloop.counter}}" checked />
+									{% else %}
+										<input type="checkbox" name="chk-{{row.group.id}}-{{forloop.counter}}" />
+									{% endif %}
+								</div>
+							</td>
+						{% endfor %}
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<button type="submit" class="btn btn-primary">OK</button>
+		<input type="hidden" name="listinfo" value="{{ listinfo }}">
+		<input type="hidden" name="initial" value="{{ initial }}">
+	</form>
+	<form class="form" action="{% url 'review:addchecklist' %}" method="POST">
+		{% csrf_token %}
+		<div class="form-group">
+			<label class="control-label" for="title">List Title:</label>
+			<div class="form-control">
+				<input type="text" id="title" name="title" placeholder="Enter new list title">
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="control-label" for="title">List Type:</label>
+			<div class="form-control">
+				<input type="checkbox" name="selfcheck" />
+				<label>Self Check</label>
+			</div>
+		</div>
+		<button type="submit" class="btn btn-primary">OK</button>
+		<input type="hidden" name="projectcode" value="{{ projectcode }}">
+	</form>
+</div>
+{% endblock %}

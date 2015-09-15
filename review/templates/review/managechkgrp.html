@@ -1,0 +1,51 @@
+{% extends 'review/base.html' %}
+
+{% block title %}Manage CheckGroups{% endblock %}
+
+{% block body %}
+<div class="container">
+	<form class="form" action="{% url 'review:managecheckgroup' projectcode %}" method="POST">
+		{% csrf_token %}
+		<table class="table table-hover table-striped">
+			<thead>
+				<td>Item</td>
+				{% for grp in groups %}
+					<td>{{ grp.title }}</td>
+				{% endfor %}
+			</thead>
+			<tbody>
+				{% for row in data %}
+					<tr>
+						<td>{{ row.item.title }}</td>
+						{% for grp in row.groups %}
+							<td>
+								<div class="switch">
+									{% if grp %}
+										<input type="checkbox" name="chk-{{row.item.id}}-{{forloop.counter}}" checked />
+									{% else %}
+										<input type="checkbox" name="chk-{{row.item.id}}-{{forloop.counter}}" />
+									{% endif %}
+								</div>
+							</td>
+						{% endfor %}
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<button type="submit" class="btn btn-primary">OK</button>
+		<input type="hidden" name="groupinfo" value="{{ groupinfo }}">
+		<input type="hidden" name="initial" value="{{ initial }}">
+	</form>
+	<form class="form" action="{% url 'review:addcheckgroup' %}" method="POST">
+		{% csrf_token %}
+		<div class="form-group">
+			<label class="control-label" for="title">Group Title:</label>
+			<div class="form-control">
+				<input type="text" id="title" name="title" placeholder="Enter new group title">
+			</div>
+		</div>
+		<button type="submit" class="btn btn-primary">OK</button>
+		<input type="hidden" name="projectcode" value="{{ projectcode }}">
+	</form>
+</div>
+{% endblock %}

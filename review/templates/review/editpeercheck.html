@@ -1,0 +1,215 @@
+{% extends 'review/base.html' %}
+
+{% block title %}Edit Report{% endblock %}
+
+{% block body %}
+<div class="container">
+	<div id="bug-form-empty" class="hidden">
+		<div class="panel panel-default" id="bug-form-BUGID-BUGIDX">
+			<div class="panel-heading">
+				<h4 class="panel-title">
+					<a data-toggle="collapse" data-parent="#accordionBUGID" href="#collapseBUGID-BUGIDX">指摘BUGIDX</a>
+					<a class="pull-right bugdyn" href="javascript:void(0)" onclick="dynclick(this)" id="dyn-BUGID-BUGIDX"><span class="glyphicon glyphicon-remove"></span></a>
+				</h4>
+			</div>
+			<div id="collapseBUGID-BUGIDX" class="panel panel-collapse collapse">
+				<div class="col-sm-6">
+					<label class="control-label">Status</label>
+					<select name="bug-BUGID-status-BUGIDX" id="bug-BUGID-status-BUGIDX" class="form-control">
+						{% for choice in form.bugstatus %}
+							{% ifequal forloop.counter 1 %}
+								<option value="{{ choice.0 }}" selected >{{ choice.1 }}</option>
+							{% else %}
+								<option value="{{ choice.0 }}" >{{ choice.1 }}</option>
+							{% endifequal %}
+						{% endfor %}
+					</select>
+				</div>
+				<div class="col-sm-6">
+					<label class="control-label">Level</label>
+					<select name="bug-BUGID-level-BUGIDX" id="bug-BUGID-level-BUGIDX" class="form-control">
+						{% for choice in form.buglevel %}
+							{% ifequal forloop.counter 1 %}
+								<option value="{{ choice.0 }}" selected >{{ choice.1 }}</option>
+							{% else %}
+								<option value="{{ choice.0 }}" >{{ choice.1 }}</option>
+							{% endifequal %}
+						{% endfor %}
+					</select>
+				</div>
+				<label class="control-label">Question</label>
+				<textarea class="form-control" name="bug-BUGID-question-BUGIDX" id="bug-BUGID-question-BUGIDX" rows="2"></textarea>
+				<label class="control-label">Answer</label>
+				<textarea class="form-control" name="bug-BUGID-answer-BUGIDX" id="bug-BUGID-answer-BUGIDX" rows="2"></textarea>
+			</div>
+		</div>
+	</div>
+	<form class="form" action="{% url 'review:editpeercheck' form.report.id %}" method="POST">
+		{% csrf_token %}
+		{% for groupinfo in form.groups %}
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h4 class="panel-title">
+						<a data-toggle="collapse" href="#collapse{{ groupinfo.group.id }}">{{ groupinfo.group.title }}</a>
+						<a class="pull-right" href="javascript:void(0)" onclick="grpclick(this)" id="valid-{{ groupinfo.group.id }}">
+							{% ifequal groupinfo.group.valid '1' %}
+								有効
+							{% else %}
+								無効
+							{% endifequal %}
+						</a>
+					</h4>
+				</div>
+				<input type="hidden" name="group-valid-{{ groupinfo.group.id }}" id="group-valid-{{ groupinfo.group.id }}" value="{{ groupinfo.group.valid }}">
+				<div id="collapse{{ groupinfo.group.id }}" class="panel panel-collapse collapse in">
+					<div class="panel-body">
+						{% for item in groupinfo.items %}
+							<div class="form-group">
+								<label class="control-label">{{ item.title }}</label>
+								<div class="form-control">
+								{% for radio in form.choice %}
+									<label class="checkbox-inline">
+										{% ifequal item.choice radio.0 %}
+											<input type="radio" name="{{ item.name }}-choice" id="{{ item.name }}-choice-{{ forloop.counter }}" value="{{ radio.0 }}" checked>{{ radio.1 }}</label>
+										{% else %}
+											<input type="radio" name="{{ item.name }}-choice" id="{{ item.name }}-choice-{{ forloop.counter }}" value="{{ radio.0 }}" >{{ radio.1 }}</label>
+										{% endifequal %}
+									</label>
+								{% endfor %}
+								</div>
+								{% if item.error %}
+									<span class="help-block">
+										<label class="text-danger">{{ item.error }}</label>
+									</span>
+								{% endif %}
+								<input type="hidden" id="bug-count-{{ item.name }}" name="bug-count-{{ item.name }}" value="{{ item.bugs|length }}">
+								<div class="panel-group" id="accordion-{{ item.name }}">
+									{% for bug in item.bugs %}
+										<div class="panel panel-default" id="bug-form-{{ item.name }}-{{ forloop.counter }}">
+											<div class="panel-heading">
+												<h4 class="panel-title">
+													<a data-toggle="collapse" data-parent="#accordion-{{ item.name }}" href="#collapse-{{ item.name }}-{{ forloop.counter }}">指摘{{ forloop.counter }}</a>
+													{% ifequal forloop.counter 1 %}
+														<a class="pull-right bugdyn" href="javascript:void(0)" onclick="dynclick(this)" id="dyn-{{ item.name }}-{{ forloop.counter }}"><span class="glyphicon glyphicon-plus"></span></a>
+													{% else %}
+														{% if forloop.counter > item.buginitcount %}
+															<a class="pull-right bugdyn" href="javascript:void(0)" onclick="dynclick(this)" id="dyn-{{ item.name }}-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a>
+														{% endif %}
+													{% endifequal %}
+												</h4>
+											</div>
+											<div id="collapse-{{ item.name }}-{{ forloop.counter }}" class="panel panel-collapse collapse">
+												<div class="col-sm-6">
+													<label class="control-label">Status</label>
+													<select name="bug-{{ item.name }}-status-{{ forloop.counter }}" id="bug-{{ item.name }}-status-{{ forloop.counter }}" class="form-control">
+														{% for choice in form.bugstatus %}
+															{% ifequal bug.status choice.0 %}
+																<option value="{{ choice.0 }}" selected >{{ choice.1 }}</option>
+															{% else %}
+																<option value="{{ choice.0 }}">{{ choice.1 }}</option>
+															{% endifequal %}
+														{% endfor %}
+													</select>
+												</div>
+												<div class="col-sm-6">
+													<label class="control-label">Level</label>
+													<select name="bug-{{ item.name }}-level-{{ forloop.counter }}" id="bug-{{ item.name }}-level-{{ forloop.counter }}" class="form-control">
+														{% for choice in form.buglevel %}
+															{% ifequal bug.level choice.0 %}
+																<option value="{{ choice.0 }}" selected >{{ choice.1 }}</option>
+															{% else %}
+																<option value="{{ choice.0 }}">{{ choice.1 }}</option>
+															{% endifequal %}
+														{% endfor %}
+													</select>
+												</div>
+												<label class="control-label">Question</label>
+												{% if forloop.counter <= item.buginitcount %}
+													<textarea class="form-control" name="bug-{{ item.name }}-question-{{ forloop.counter }}" id="bug-{{ item.name }}-question-{{ forloop.counter }}" rows="2" readonly>{{ bug.question }}</textarea>
+												{% else %}
+													<textarea class="form-control" name="bug-{{ item.name }}-question-{{ forloop.counter }}" id="bug-{{ item.name }}-question-{{ forloop.counter }}" rows="2">{{ bug.question }}</textarea>
+												{% endif %}
+												<label class="control-label">Answer</label>
+												<textarea class="form-control" name="bug-{{ item.name }}-answer-{{ forloop.counter }}" id="bug-{{ item.name }}-answer-{{ forloop.counter }}" rows="2">{{ bug.answer }}</textarea>
+											</div>
+										</div>
+									{% endfor %}
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+		<button type="submit" class="btn btn-primary">OK</button>
+		<input type="hidden" name="initvalue" value="{{ initvalue }}">
+	</form>
+</div>
+<script type="text/javascript">
+	function chgId(item, oldcnt, newcnt) {
+		var oldid = item.id;
+		var parts = oldid.split('-');
+		if (parts[parts.length-1] == oldcnt) {
+			parts[parts.length-1] = newcnt;
+			oldid = parts.join('-');
+			item.id = oldid;
+		}
+	}
+	function grpclick(clickitem) {
+		var grplink = $(clickitem)[0];
+		var hiditem = $('#group-'+grplink.id);
+		var curstatus = 1 - parseInt(hiditem.val());
+		hiditem.val(curstatus);
+		if (curstatus == 0) {
+			grplink.text="無効";
+		} else {
+			grplink.text="有効";
+		}
+	}
+	function dynclick(clickitem) {
+		var parts = $(clickitem)[0].id.split('-');
+		var bugid = parts[parts.length - 2];
+		var bugidx = parts[parts.length - 1];
+		var selectItem = $("#bug-form-"+bugid+"-"+bugidx);
+		var countelement = $("#bug-count-"+bugid);
+		var itemcount = countelement.val();
+		if (bugidx > 1) {
+			if (bugidx < itemcount) {
+				var siblings = selectItem.nextAll();
+				var children = siblings.find('*');
+				var title = siblings.find('h4');
+				for (var i = 0; i < siblings.length; i++) {
+					var newidx = i + parseInt(bugidx);
+					var oldidx = newidx + 1;
+					chgId(siblings[i], oldidx, newidx);
+					for (var j = 0; j < children.length; j++) {
+						chgId(children[j], oldidx, newidx);
+					}
+					for (var j = 0; j < title.length; j++) {
+						var child = title[j].children[0];
+						var parts = child.href.split('-');
+						if (parts[parts.length - 1] == oldidx) {
+							parts[parts.length - 1] = newidx;
+							child.href = parts.join('-');
+							child.text = child.text.substr(0, child.text.length - (""+oldidx).length) + newidx;
+						}
+					}
+				}
+			}
+			selectItem.remove();
+			countelement.val(itemcount-1);
+		}
+		else {
+			var emptyform = $('#bug-form-empty').html();
+			bugidx = "" + (parseInt(itemcount) + 1);
+			var ptn = new RegExp("\\bBUGID\\b",'g');
+			emptyform = emptyform.replace(ptn, bugid);
+			ptn.compile("\\bBUGIDX\\b", 'g');
+			emptyform = emptyform.replace(ptn, bugidx);
+			var panelgroup = selectItem.parent();
+			panelgroup.append(emptyform);
+			countelement.val(parseInt(itemcount)+1);
+		}
+	}
+</script>
+{% endblock %}

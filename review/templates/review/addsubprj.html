@@ -1,0 +1,31 @@
+{% extends 'review/base.html' %}
+
+{% block title %}Add SubProjects{% endblock %}
+
+{% block body %}
+<div class="container">
+	<form class="form" action="{% url 'review:addsubproject' projectcode %}" method="POST">
+		{% csrf_token %}
+		<div class="form-group">
+			<label for="excel_tab" class="control-label">SubProjects</label>
+			<textarea class="form-control" name="excel_tab" id="excel_tab" rows="9"></textarea>
+			<span class="help-block">
+				<strong>Excel Format</strong>
+				<table class="table">
+					<thead>
+						<th>Title</th>
+						<th>Details</th>
+					</thead>
+					<tbody>
+						<tr>
+							<td>sub-project title</td>
+							<td>project detail<br />*support MarkDown</td>
+						</tr>
+					</tbody>
+				</table>
+			</span>
+		</div>
+		<button type="submit" class="btn btn-primary">Preview</button>
+	</form>
+</div>
+{% endblock %}
