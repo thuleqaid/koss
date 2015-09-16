@@ -6,7 +6,7 @@
 <div class="container">
 	<form class="form" action="{% url 'review:managechecklist' projectcode %}" method="POST">
 		{% csrf_token %}
-		<table class="table table-hover table-striped">
+		<table class="table table-hover table-striped" id="radiotable">
 			<thead>
 				<td>Group</td>
 				{% for lst in lists %}
@@ -55,4 +55,15 @@
 		<input type="hidden" name="projectcode" value="{{ projectcode }}">
 	</form>
 </div>
+<script type="text/javascript">
+	$(document).ready(function() {
+			$('#radiotable').DataTable({
+				scrollY: 300,
+				scrollX: true,
+				scrollCollapse: true,
+				paging: false,
+				fixedColumns: true
+				});
+		});
+</script>
 {% endblock %}

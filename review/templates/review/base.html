@@ -7,8 +7,11 @@
 		<title>{% block title %}{% endblock %}</title>
 		<link type="text/css" href="{% static 'review/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
 		<link type="text/css" href="{% static 'review/bootstrap/css/bootstrap-theme.min.css' %}" rel="stylesheet">
+		<link rel="stylesheet" type="text/css" href="{% static 'review/datatables/datatables.min.css' %}">
 		<script type="text/javascript" src="{% static 'review/jquery/jquery.min.js' %}"></script>
 		<script type="text/javascript" src="{% static 'review/bootstrap/js/bootstrap.min.js' %}"></script>
+		<script type="text/javascript" src="{% static 'review/showdown/showdown.min.js' %}"></script>
+		<script type="text/javascript" charset="utf8" src="{% static 'review/datatables/datatables.min.js' %}"></script>
 	</head>
 	<body>
 {% block body %}{% endblock %}

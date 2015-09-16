@@ -40,7 +40,7 @@
 		</tbody>
 	</table>
 	<h4>SubProjects List:</h4>
-	<table class="table table-hover table-striped">
+	<table class="table table-hover table-striped" id="prjtable">
 		<thead>
 			<td>Title</td><td>Details</td>
 		</thead>
@@ -56,4 +56,9 @@
 		</tbody>
 	</table>
 </div>
+<script type="text/javascript">
+	$(document).ready(function() {
+			$('#prjtable').DataTable();
+		});
+</script>
 {% endblock %}
