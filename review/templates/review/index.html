@@ -1,8 +1,9 @@
-{% extends 'review/base.html' %}
+{% extends 'review/base_js.html' %}
 
 {% block title %}Project List{% endblock %}
 
 {% block body %}
+{{ block.super }}
 <div class="container">
 	{% ifequal permission 9 %}
 		<a href="{% url 'review:importuser' %}">Import User</a>

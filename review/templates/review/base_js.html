@@ -1,0 +1,39 @@
+{% extends 'review/base.html' %}
+{% load staticfiles %}
+
+{% block additionjs %}
+	<link rel="stylesheet" type="text/css" href="{% static 'review/datatables/datatables.min.css' %}">
+	<script type="text/javascript" src="{% static 'review/showdown/showdown.min.js' %}"></script>
+	<script type="text/javascript" charset="utf8" src="{% static 'review/datatables/datatables.min.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+	<nav class="navbar navbar-default">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#the-menu">
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand brand" href="{% url 'review:index' %}">Review System</a>
+			</div>
+			<div class="collapse navbar-collapse" id="the-menu">
+				<ul class="nav navbar-nav navbar-right">
+					{% if user.is_active %}
+						<li><a href="#">
+							{% if user.last_name %}
+								{{ user.last_name }}{{ user.first_name }}
+							{% else %}
+								{{ user.username }}
+							{% endif %}
+						</a></li>
+						<li><a href="{% url 'account:logout' %}">LogOut</a></li>
+					{% else %}
+						<li><a href="{% url 'account:login' %}">LogIn</a></li>
+					{% endif %}
+				</ul>
+			</div>
+		</div>
+	</nav>
+{% endblock %}

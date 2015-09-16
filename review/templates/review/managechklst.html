@@ -1,8 +1,9 @@
-{% extends 'review/base.html' %}
+{% extends 'review/base_js.html' %}
 
 {% block title %}Manage CheckLists{% endblock %}
 
 {% block body %}
+{{ block.super }}
 <div class="container">
 	<form class="form" action="{% url 'review:managechecklist' projectcode %}" method="POST">
 		{% csrf_token %}
@@ -40,9 +41,7 @@
 		{% csrf_token %}
 		<div class="form-group">
 			<label class="control-label" for="title">List Title:</label>
-			<div class="form-control">
-				<input type="text" id="title" name="title" placeholder="Enter new list title">
-			</div>
+			<input type="text" class="form-control" id="title" name="title" placeholder="Enter new list title">
 		</div>
 		<div class="form-group">
 			<label class="control-label" for="title">List Type:</label>
@@ -51,7 +50,9 @@
 				<label>Self Check</label>
 			</div>
 		</div>
-		<button type="submit" class="btn btn-primary">OK</button>
+		<div class="form-group">
+			<button type="submit" class="btn btn-primary">OK</button>
+		</div>
 		<input type="hidden" name="projectcode" value="{{ projectcode }}">
 	</form>
 </div>

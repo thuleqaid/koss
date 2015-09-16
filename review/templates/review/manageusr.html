@@ -1,9 +1,10 @@
-{% extends 'review/base.html' %}
+{% extends 'review/base_js.html' %}
 {% load staticfiles %}
 
 {% block title %}Manage CheckGroups{% endblock %}
 
 {% block body %}
+{{ block.super }}
 <div class="container">
 	<form class="form" action="{% url 'review:manageuser' projectcode %}" method="POST">
 		{% csrf_token %}

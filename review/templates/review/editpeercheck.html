@@ -1,8 +1,9 @@
-{% extends 'review/base.html' %}
+{% extends 'review/base_js.html' %}
 
 {% block title %}Edit Report{% endblock %}
 
 {% block body %}
+{{ block.super }}
 <div class="container">
 	<div id="bug-form-empty" class="hidden">
 		<div class="panel panel-default" id="bug-form-BUGID-BUGIDX">

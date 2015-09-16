@@ -1,8 +1,9 @@
-{% extends 'review/base.html' %}
+{% extends 'review/base_js.html' %}
 
 {% block title %}Add SubProjects{% endblock %}
 
 {% block body %}
+{{ block.super }}
 <div class="container">
 	<form class="form" action="{% url 'review:addsubproject' projectcode %}" method="POST">
 		{% csrf_token %}

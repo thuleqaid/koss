@@ -1,4 +1,4 @@
-{% extends 'review/base.html' %}
+{% extends 'review/base_js.html' %}
 
 {% block title %}
 {% if projectid > 0 %}
@@ -9,6 +9,7 @@ Project New
 {% endblock %}
 
 {% block body %}
+{{ block.super }}
 <div class="container">
 	<form class="form" action="{% url 'review:projectedit' projectcode %}" method="POST">
 		{% csrf_token %}
