@@ -170,16 +170,16 @@ class CheckListResult(BaseVersionTable):
 
 @python_2_unicode_compatible
 class CheckGroupResult(BaseVersionTable):
-    Result = collections.namedtuple('Result', ['code','version','status','level','itemcode'])
+    Result = collections.namedtuple('Result', ['code','version','id','status','level'])
     Choice = collections.namedtuple('Choice', ['code','version','id','choice'])
     groupid = models.PositiveIntegerField()
     groupcode = models.CharField(max_length=CONST_CODE_LEN)
     groupversion = models.PositiveIntegerField()
     grouptitle = models.CharField(max_length=240)
     status = models.CharField(max_length=CONST_CODE_LEN)
-    summary = models.TextField(json.dumps([])) # count of each choice
-    choices = models.TextField(json.dumps([])) # list of Choice
-    buglist = models.TextField(json.dumps([])) # list of Result
+    summary = models.TextField(default=json.dumps([])) # count of each choice
+    choices = models.TextField(default=json.dumps([])) # list of Choice
+    buglist = models.TextField(default=json.dumps([])) # list of Result
     def __str__(self):
         return self.strPrefix()+self.status
     class Meta:

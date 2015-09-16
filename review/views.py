@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 import json
+import copy
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.urlresolvers import reverse
@@ -552,7 +553,7 @@ def peerchecknew(request, subprojectcode, checklistcode):
                                 bugobj.itemversion = itm['version']
                                 bugobj.setCode('BUG',CheckBugItem.nextCode('BUG'))
                                 bugobj.save()
-                                buglist.append(CheckGroupResult.Result(code=bugobj.code, version=bugobj.version, status=bugobj.status, level=bugobj.level, itemcode=itm['code']))
+                                buglist.append(CheckGroupResult.Result(code=bugobj.code, version=bugobj.version, status=bugobj.status, level=bugobj.level, id=bugobj.id))
                     if count_ng > 0:
                         group_status = 'NG'
                     else:
@@ -564,6 +565,7 @@ def peerchecknew(request, subprojectcode, checklistcode):
                             status=group_status)
                     grpobj.summary=json.dumps([('IG',count_ig),('OK',count_ok),('NG',count_ng)])
                 grpobj.choices=json.dumps(choiceresult)
+                grpobj.buglist=json.dumps(buglist)
                 grpobj.setCode('RGRP', CheckGroupResult.nextCode('RGRP'))
                 grpobj.save()
                 groupids.append(grpobj.id)
@@ -607,11 +609,12 @@ def peercheckedit(request, reportid):
     # DataStructure for Form
     # {'checklist':checklist-info, 'groups':[ group-info, ... ], 'choice': [], 'bugstatus':[], 'buglevel':[]}
     # group-info: {'group': grpobj, 'items': [ item-info, ... ] }
-    # item-info: {'title': title, 'choice': choice, 'bugs': [] }
+    # item-info: {'title': title, 'choice': choice, 'bugs': [ bug-info, ... ] }
+    # bug-info: {'question':question, 'answer':answer, 'status': status, 'level': bug-level }
     if request.method == 'POST':
         # 整理POST数据
         initvalue = json.loads(request.POST['initvalue'])
-        for key in ('report', 'subproject', 'checklist', 'choice'):
+        for key in ('report', 'subproject', 'checklist', 'choice', 'bugstatus', 'buglevel'):
             form[key] = initvalue[key]
         form['groups'] = []
         flag_changed = False
@@ -627,13 +630,55 @@ def peercheckedit(request, reportid):
                 flag_changed = True
                 form['groups'][-1]['group']['changed'] = True
             for itm in grp['items']:
-                oldvalue = itm['choice']
-                form['groups'][-1]['items'].append(itm)
-                form['groups'][-1]['items'][-1]['bugs'] = []
+                form['groups'][-1]['items'].append(copy.deepcopy(itm))
+                #form['groups'][-1]['items'][-1]['bugs'] = []
                 # read value from POST
                 choicekey = form['groups'][-1]['items'][-1]['name']+'-choice'
+                bugkey1 = 'bug-'+form['groups'][-1]['items'][-1]['name']+'-status-{}'
+                bugkey2 = 'bug-'+form['groups'][-1]['items'][-1]['name']+'-level-{}'
+                bugkey3 = 'bug-'+form['groups'][-1]['items'][-1]['name']+'-question-{}'
+                bugkey4 = 'bug-'+form['groups'][-1]['items'][-1]['name']+'-answer-{}'
                 form['groups'][-1]['items'][-1]['choice'] = request.POST.get(choicekey, '')
-                if groupvalid and form['groups'][-1]['items'][-1]['choice'] != oldvalue:
+                bugcount = int(request.POST.get('bug-count-'+form['groups'][-1]['items'][-1]['name'],'0'))
+                auto_choice = ''
+                valid_bug = 0
+                for i in range(bugcount):
+                    question = request.POST.get(bugkey3.format(i+1),'').strip()
+                    if question:
+                        # Question不为空时，记录指摘
+                        if valid_bug < form['groups'][-1]['items'][-1]['buginitcount']:
+                            form['groups'][-1]['items'][-1]['bugs'][valid_bug]['status'] = request.POST.get(bugkey1.format(i+1),'')
+                            form['groups'][-1]['items'][-1]['bugs'][valid_bug]['level'] = request.POST.get(bugkey2.format(i+1),'')
+                            form['groups'][-1]['items'][-1]['bugs'][valid_bug]['question'] = question
+                            form['groups'][-1]['items'][-1]['bugs'][valid_bug]['answer'] = request.POST.get(bugkey4.format(i+1),'').strip()
+                            if (form['groups'][-1]['items'][-1]['bugs'][valid_bug]['status'] != itm['bugs'][valid_bug]['status']) or (form['groups'][-1]['items'][-1]['bugs'][valid_bug]['level'] != itm['bugs'][valid_bug]['level']) or (form['groups'][-1]['items'][-1]['bugs'][valid_bug]['answer'] != itm['bugs'][valid_bug]['answer']):
+                                form['groups'][-1]['group']['changed'] = True
+                                form['groups'][-1]['items'][-1]['bugs'][valid_bug]['changed'] = True
+                                flag_changed = True
+                            else:
+                                form['groups'][-1]['items'][-1]['bugs'][valid_bug]['changed'] = False
+                            if form['groups'][-1]['items'][-1]['bugs'][valid_bug]['status'].startswith('P'):
+                                # 只要有一个处理中的指摘，检查项就为NG
+                                auto_choice='NG'
+                        else:
+                            form['groups'][-1]['items'][-1]['bugs'].append({})
+                            form['groups'][-1]['items'][-1]['bugs'][-1]['status'] = request.POST.get(bugkey1.format(i+1),'')
+                            form['groups'][-1]['items'][-1]['bugs'][-1]['level'] = request.POST.get(bugkey2.format(i+1),'')
+                            form['groups'][-1]['items'][-1]['bugs'][-1]['question'] = question
+                            form['groups'][-1]['items'][-1]['bugs'][-1]['answer'] = request.POST.get(bugkey4.format(i+1),'').strip()
+                            form['groups'][-1]['group']['changed'] = True
+                            form['groups'][-1]['items'][-1]['bugs'][-1]['changed'] = True
+                            flag_changed = True
+                            if form['groups'][-1]['items'][-1]['bugs'][-1]['status'].startswith('P'):
+                                # 只要有一个处理中的指摘，检查项就为NG
+                                auto_choice='NG'
+                        valid_bug += 1
+                if valid_bug > 0:
+                    if auto_choice == '':
+                        # 所有指摘都处理完成是，检查项为OK
+                        auto_choice = 'OK'
+                    form['groups'][-1]['items'][-1]['choice'] = auto_choice
+                if groupvalid and form['groups'][-1]['items'][-1]['choice'] != itm['choice']:
                     flag_changed = True
                     form['groups'][-1]['group']['changed'] = True
         if flag_changed:
@@ -650,6 +695,7 @@ def peercheckedit(request, reportid):
                     grpobj.id = None
                     grpobj.version += 1
                     choiceresult = []
+                    buglist = []
                     if grp['group']['valid'] == '0':
                         grpobj.status = 'IG'
                         for itm in grp['items']:
@@ -673,12 +719,35 @@ def peercheckedit(request, reportid):
                                 count_ng += 1
                             else:
                                 pass
+                            for bug in itm['bugs']:
+                                if not bug['changed']:
+                                    buglist.append(CheckGroupResult.Result(code=bug['code'], version=bug['version'], status=bug['status'], level=bug['level'], id=bug['id']))
+                                else:
+                                    if 'code' in bug:
+                                        # 既存指摘
+                                        bugobj = CheckBugItem.objects.get(pk=bug['id'])
+                                        bugobj.id = None
+                                        bugobj.version += 1
+                                        bugobj.answer = bug['answer']
+                                        bugobj.status = bug['status']
+                                        bugobj.level  = bug['level']
+                                        bugobj.save()
+                                        buglist.append(CheckGroupResult.Result(code=bugobj.code, version=bugobj.version, status=bugobj.status, level=bugobj.level, id=bugobj.id))
+                                    else:
+                                        # 新指摘
+                                        bugobj = CheckBugItem(question=bug['question'], answer=bug['answer'],status=bug['status'],level=bug['level'])
+                                        bugobj.itemcode = itm['code']
+                                        bugobj.itemversion = itm['version']
+                                        bugobj.setCode('BUG',CheckBugItem.nextCode('BUG'))
+                                        bugobj.save()
+                                        buglist.append(CheckGroupResult.Result(code=bugobj.code, version=bugobj.version, status=bugobj.status, level=bugobj.level, id=bugobj.id))
                         if count_ng > 0:
                             group_status = 'NG'
                         else:
                             group_status = 'OK'
                         grpobj.status = group_status
                         grpobj.summary=json.dumps([('IG',count_ig),('OK',count_ok),('NG',count_ng)])
+                    grpobj.buglist=json.dumps(buglist)
                     grpobj.choices=json.dumps(choiceresult)
                     grpobj.save()
                     groupids.append(grpobj.id)
@@ -710,10 +779,18 @@ def peercheckedit(request, reportid):
                     form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'valid':'0'},'items':[]})
                 else:
                     form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'valid':'1'},'items':[]})
+                bugs = [CheckGroupResult.Result(*x) for x in json.loads(grp.buglist)]
+                bugrecords = list(CheckBugItem.objects.filter(pk__in = [x.id for x in bugs]).order_by('code'))
                 items = [CheckGroupResult.Choice(*x) for x in json.loads(grp.choices)]
                 for item in items:
                     itemtitle = CheckItem.objects.get(pk = item.id).title
                     form['groups'][-1]['items'].append({'id':item.id, 'code':item.code, 'version':item.version, 'name':'item{}'.format(item.id),'title':itemtitle, 'choice':item.choice, 'error':'', 'buginitcount':0, 'bugs':[]})
+                    bugcount = 0
+                    for bugitem in bugrecords:
+                        if bugitem.itemcode == item.code:
+                            form['groups'][-1]['items'][-1]['bugs'].append({'question':bugitem.question, 'answer':bugitem.answer, 'status':bugitem.status, 'level':bugitem.level, 'code':bugitem.code,'version':bugitem.version,'id':bugitem.id,})
+                            bugcount += 1
+                    form['groups'][-1]['items'][-1]['buginitcount'] = bugcount
             return render(request, 'review/editpeercheck.html', {'form':form,'initvalue':json.dumps(form),})
 
 def reportnew(request, checklistcode):
