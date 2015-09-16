@@ -39,7 +39,7 @@
 		<input type="hidden" name="groupinfo" value="{{ groupinfo }}">
 		<input type="hidden" name="initial" value="{{ initial }}">
 	</form>
-	<form class="form" action="{% url 'review:addcheckgroup' %}" method="POST">
+	<form class="form" action="{% url 'review:addcheckgroup' projectcode %}" method="POST">
 		{% csrf_token %}
 		<div class="form-group">
 			<label class="control-label" for="title">Group Title:</label>

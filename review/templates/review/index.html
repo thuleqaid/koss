@@ -4,6 +4,9 @@
 
 {% block body %}
 <div class="container">
+	{% ifequal permission 9 %}
+		<a href="{% url 'review:importuser' %}">Import User</a>
+	{% endifequal %}
 	<table class="table table-hover table-striped" id="prjtable">
 		<thead>
 			<td><a href="{% url 'review:projectedit' 0 %}"><abbr title="New Project"><span class="glyphicon glyphicon-plus"></span></abbr></a>Title</td>

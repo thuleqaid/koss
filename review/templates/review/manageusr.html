@@ -1,0 +1,60 @@
+{% extends 'review/base.html' %}
+{% load staticfiles %}
+
+{% block title %}Manage CheckGroups{% endblock %}
+
+{% block body %}
+<div class="container">
+	<form class="form" action="{% url 'review:manageuser' projectcode %}" method="POST">
+		{% csrf_token %}
+		<table class="table table-hover table-striped" id="radiotable">
+			<thead>
+				<tr>
+					<td>User</td>
+					<td>AdminUser</td>
+					<td>MemberUser</td>
+				</tr>
+			</thead>
+			<tbody>
+				{% for user in users %}
+					<tr>
+						<td>{{ user.lastname }}{{ user.firstname }}</td>
+						<td>
+							<div class="switch">
+								{% if user.id in groups.0 %}
+									<input type="checkbox" name="chk-{{user.id}}-0" checked />
+								{% else %}
+									<input type="checkbox" name="chk-{{user.id}}-0" />
+								{% endif %}
+							</div>
+						</td>
+						<td>
+							<div class="switch">
+								{% if user.id in groups.1 %}
+									<input type="checkbox" name="chk-{{user.id}}-1" checked />
+								{% else %}
+									<input type="checkbox" name="chk-{{user.id}}-1" />
+								{% endif %}
+							</div>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		<button type="submit" class="btn btn-primary">OK</button>
+		<input type="hidden" name="groupinfo" value="{{ groupinfo }}">
+		<input type="hidden" name="userinfo" value="{{ userinfo }}">
+	</form>
+</div>
+<script type="text/javascript">
+	$(document).ready(function() {
+			$('#radiotable').DataTable({
+				scrollY: 300,
+				scrollX: true,
+				scrollCollapse: true,
+				paging: false,
+				fixedColumns: true
+				});
+		});
+</script>
+{% endblock %}

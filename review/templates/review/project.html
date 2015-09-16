@@ -7,17 +7,22 @@
 	<div class="page-header">
 		<h2>
 			{{ project.title }}
-			<a href="{% url 'review:projectedit' project.code %}">
-				<abbr title="Edit Project"><span class="glyphicon glyphicon-pencil"></span></abbr>
-			</a>
+			{% if permission > 3 %}
+				<a href="{% url 'review:projectedit' project.code %}">
+					<abbr title="Edit Project"><span class="glyphicon glyphicon-pencil"></span></abbr>
+				</a>
+			{% endif %}
 		</h2>
 	</div>
-	<ul>
-		<li><a href="{% url 'review:importcheckitem' project.code %}">Import CheckItems</a></li>
-		<li><a href="{% url 'review:managecheckgroup' project.code %}">Manage CheckGroups</a></li>
-		<li><a href="{% url 'review:managechecklist' project.code %}">Manage CheckLists</a></li>
-		<li><a href="{% url 'review:addsubproject' project.code %}">Add Subprojects</a></li>
-	</ul>
+	{% if permission > 3 %}
+		<ul>
+			<li><a href="{% url 'review:manageuser' project.code %}">Manage User</a></li>
+			<li><a href="{% url 'review:importcheckitem' project.code %}">Import CheckItems</a></li>
+			<li><a href="{% url 'review:managecheckgroup' project.code %}">Manage CheckGroups</a></li>
+			<li><a href="{% url 'review:managechecklist' project.code %}">Manage CheckLists</a></li>
+			<li><a href="{% url 'review:addsubproject' project.code %}">Add Subprojects</a></li>
+		</ul>
+	{% endif %}
 	<h4>Checklist List:</h4>
 	<table class="table table-hover table-striped">
 		<thead>
@@ -47,7 +52,7 @@
 		<tbody>
 		{% for subp in subprojects %}
 			<tr>
-				<td><a href="{% url 'review:subproject' subp.code %}">{{ subp.title }}</a></td>
+				<td><a href="{% url 'review:subproject' project.code subp.code %}">{{ subp.title }}</a></td>
 				<td>
 					{{ subp.details }}
 				</td>

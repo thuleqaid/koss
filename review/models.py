@@ -64,9 +64,11 @@ class Project(BaseVersionTable):
     StatusOpen   = 'OP'
     StatusClosed = 'ED'
     StatusChoice = ((StatusOpen, 'Open'), (StatusClosed, 'Closed'),)
-    #author = models.ForeignKey(User)
+    author = models.ForeignKey(User)
     title = models.CharField(max_length=240)
     status = models.CharField(max_length=2, choices=StatusChoice, default=StatusOpen)
+    users_admin = models.TextField(default=json.dumps([]))
+    users = models.TextField(default=json.dumps([]))
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:
@@ -74,7 +76,7 @@ class Project(BaseVersionTable):
 
 @python_2_unicode_compatible
 class SubProject(BaseVersionTable):
-    #author = models.ForeignKey(User)
+    author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN, default='')
     title = models.CharField(max_length=240)
     details = models.TextField(default='')
@@ -89,7 +91,7 @@ class CheckList(BaseVersionTable):
     ChoiceItem = collections.namedtuple('ChoiceItem', ['valid','value','text'])
     BugStatus = collections.namedtuple('BugStatus', ['valid','value','text'])
     BugCategory = collections.namedtuple('BugCategory', ['valid','value','text'])
-    #author = models.ForeignKey(User)
+    author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN)
     title = models.CharField(max_length=240)
     selfcheck = models.BooleanField(default=False)
@@ -105,7 +107,7 @@ class CheckList(BaseVersionTable):
 @python_2_unicode_compatible
 class CheckGroup(BaseVersionTable):
     GroupDetailItem = collections.namedtuple('GroupDetailItem', ['valid','code','version','id'])
-    #author = models.ForeignKey(User)
+    author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN)
     title = models.CharField(max_length=240)
     details = models.TextField(default=json.dumps([]))
@@ -145,7 +147,7 @@ class CheckGroup(BaseVersionTable):
 
 @python_2_unicode_compatible
 class CheckItem(BaseVersionTable):
-    #author = models.ForeignKey(User)
+    author = models.ForeignKey(User)
     project = models.CharField(max_length=CONST_CODE_LEN, default='')
     title = models.CharField(max_length=240)
     details = models.TextField(default='')
@@ -156,7 +158,7 @@ class CheckItem(BaseVersionTable):
 
 @python_2_unicode_compatible
 class CheckListResult(BaseVersionTable):
-    #author = models.ForeignKey(User)
+    author = models.ForeignKey(User)
     subproject = models.CharField(max_length=CONST_CODE_LEN, default='')
     title = models.CharField(max_length=240)
     listcode = models.CharField(max_length=CONST_CODE_LEN)
@@ -172,6 +174,7 @@ class CheckListResult(BaseVersionTable):
 class CheckGroupResult(BaseVersionTable):
     Result = collections.namedtuple('Result', ['code','version','id','status','level'])
     Choice = collections.namedtuple('Choice', ['code','version','id','choice'])
+    author = models.ForeignKey(User)
     groupid = models.PositiveIntegerField()
     groupcode = models.CharField(max_length=CONST_CODE_LEN)
     groupversion = models.PositiveIntegerField()
@@ -187,6 +190,7 @@ class CheckGroupResult(BaseVersionTable):
 
 @python_2_unicode_compatible
 class CheckBugItem(BaseVersionTable):
+    author = models.ForeignKey(User)
     itemcode = models.CharField(max_length=CONST_CODE_LEN)
     itemversion = models.PositiveIntegerField()
     question = models.TextField()

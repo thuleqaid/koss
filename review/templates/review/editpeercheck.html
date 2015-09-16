@@ -44,7 +44,7 @@
 			</div>
 		</div>
 	</div>
-	<form class="form" action="{% url 'review:editpeercheck' form.report.id %}" method="POST">
+	<form class="form" action="{% url 'review:editpeercheck' form.project.code form.report.id %}" method="POST">
 		{% csrf_token %}
 		{% for groupinfo in form.groups %}
 			<div class="panel panel-default">
