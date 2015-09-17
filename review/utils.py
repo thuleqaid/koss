@@ -143,3 +143,76 @@ def getAuthors(subproject):
         authors = []
     return authors
 
+def getNextAction(request, project):
+    if isinstance(project, Project):
+        prjcode = project.code
+    else:
+        prjcode = project
+    # 取得所有selfcheck的checklist code
+    selfchks = [x.code for x in CheckList.latest('WHERE project="%s"' % (prjcode,)) if x.selfcheck]
+    # 取得所有subproject的code
+    subplist = [x.code for x in SubProject.latest('WHERE project="%s"' % (prjcode,))]
+    joblist = []
+    for subp in subplist:
+        # 取得subproject的所有report
+        reports = list(CheckListResult.objects.filter(subproject = subp))
+        # 取得修改过peercheck report的用户
+        modifiers = set([x.author for x in reports if x.listcode not in selfchks])
+        # 取得selfcheck report的作者
+        authors = set([x.author for x in reports if x.listcode in selfchks and x.version == 1])
+        # 取得peercheck的检查者
+        reviewer = modifiers - authors
+        if request.user in authors:
+            isAuthor = True
+        else:
+            isAuthor = False
+        if request.user in reviewer:
+            isReviewer = True
+        else:
+            isReviewer = False
+        if isAuthor or isReviewer:
+            latest = {}
+            for report in reports:
+                if report.code not in latest:
+                    latest[report.code] = report
+                else:
+                    if report.version > latest[report.code].version:
+                        latest[report.code] = report
+            for code, report in latest.items():
+                status = getReportStatus(report)
+                if status['status'] == 'NG':
+                    if isAuthor:
+                        if status['BUGA'] > 0:
+                            # 存在修改的指摘
+                            joblist.append(dict(status))
+                            joblist[-1]['selfcheck'] = False
+                            joblist[-1]['project'] = prjcode
+                            joblist[-1]['subproject'] = subp
+                            joblist[-1]['reportid'] = report.id
+                            joblist[-1]['reportcode'] = report.code
+                            joblist[-1]['reportversion'] = report.version
+                            joblist[-1]['reporttitle'] = report.title
+                        elif (status['BUGA'] == 0 and status['BUGC'] == 0):
+                            # 没有指摘（selfcheck）
+                            joblist.append(dict(status))
+                            joblist[-1]['selfcheck'] = True
+                            joblist[-1]['project'] = prjcode
+                            joblist[-1]['subproject'] = subp
+                            joblist[-1]['reportid'] = report.id
+                            joblist[-1]['reportcode'] = report.code
+                            joblist[-1]['reportversion'] = report.version
+                            joblist[-1]['reporttitle'] = report.title
+                    elif isReviewer:
+                        if status['BUGC'] > 0:
+                            # 存在需要确认的修改
+                            joblist.append(dict(status))
+                            joblist[-1]['selfcheck'] = False
+                            joblist[-1]['project'] = prjcode
+                            joblist[-1]['subproject'] = subp
+                            joblist[-1]['reportid'] = report.id
+                            joblist[-1]['reportcode'] = report.code
+                            joblist[-1]['reportversion'] = report.version
+                            joblist[-1]['reporttitle'] = report.title
+                    else:
+                        pass
+    return joblist

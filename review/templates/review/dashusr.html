@@ -1,0 +1,52 @@
+{% extends 'review/base_js.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+{{ block.super }}
+<div class="container">
+	{% if reports %}
+		<table class="table table-hover table-striped">
+			<thead>
+				<tr>
+					<th>Title</th>
+					<th>状态</th>
+					<th>OK</th>
+					<th>NG</th>
+					<th>IG</th>
+					<th>修正中指摘</th>
+					<th>确认中指摘</th>
+					<th>已完成指摘</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for report in reports %}
+					<tr>
+						{% if report.selfcheck %}
+							<td><a href="{% url 'review:editselfcheck' report.project report.reportid %}">{{ report.reporttitle }}</a></td>
+						{% else %}
+							<td><a href="{% url 'review:editpeercheck' report.project report.reportid %}">{{ report.reporttitle }}</a></td>
+						{% endif %}
+						<td>{{ report.status }}</td>
+						<td>{{ report.OK }}</td>
+						<td>{{ report.NG }}</td>
+						<td>{{ report.IG }}</td>
+						<td>{{ report.BUGA }}</td>
+						<td>{{ report.BUGC }}</td>
+						<td>{{ report.BUGD }}</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% endif %}
+</div>
+<script type="text/javascript">
+	$(document).ready(function() {
+		var converter = new showdown.Converter();
+		tds = $(".markdown");
+		for (var i = 0; i < tds.length; i++) {
+			tds[i].innerHTML = converter.makeHtml(tds[i].innerHTML);
+		}
+	});
+</script>
+{% endblock %}

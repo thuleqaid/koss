@@ -29,9 +29,9 @@ def importchkitm(request, projectcode):
                 outlist.append([x.strip() for idx, x in enumerate(row) if idx < 3])
             navbar = []
             prj = getProject(projectcode)
-            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title})
-            navbar.append({'link':reverse('review:importcheckitem', args=(projectcode,)), 'title':'Import CheckItem'})
-            navbar.append({'link':'#', 'title':'Preview CheckItem'})
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':reverse('review:importcheckitem', args=(projectcode,)), 'title':'Import CheckItem', 'param':['review:importcheckitem', projectcode]})
+            navbar.append({'link':'#', 'title':'Preview CheckItem', 'param':['',]})
             return render(request, 'review/previewchkitm.html', {'projectcode':projectcode, 'data':outlist,'initial':json.dumps(outlist),'navbar':navbar})
         elif 'initial' in request.POST:
             data = json.loads(request.POST['initial'])
@@ -45,8 +45,8 @@ def importchkitm(request, projectcode):
     else:
         navbar = []
         prj = getProject(projectcode)
-        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title})
-        navbar.append({'link':'#', 'title':'Import CheckItem'})
+        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+        navbar.append({'link':'#', 'title':'Import CheckItem', 'param':['',]})
         return render(request, 'review/importchkitm.html', {'projectcode':projectcode, 'navbar':navbar})
 
 @login_required
@@ -99,8 +99,8 @@ def managechkgrp(request, projectcode):
                     data[-1]['groups'].append(False)
         navbar = []
         prj = getProject(projectcode)
-        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title})
-        navbar.append({'link':'#', 'title':'Manage CheckGroup'})
+        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+        navbar.append({'link':'#', 'title':'Manage CheckGroup', 'param':['',]})
         return render(request, 'review/managechkgrp.html', {'projectcode':projectcode, 'groups':groups, 'data':data, 'groupinfo':json.dumps(groups), 'initial':json.dumps(data), 'navbar':navbar})
 
 @login_required
@@ -166,8 +166,8 @@ def managechklst(request, projectcode):
                     data[-1]['lists'].append(False)
         navbar = []
         prj = getProject(projectcode)
-        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title})
-        navbar.append({'link':'#', 'title':'Manage CheckList'})
+        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+        navbar.append({'link':'#', 'title':'Manage CheckList', 'param':['',]})
         return render(request, 'review/managechklst.html', {'projectcode':projectcode, 'lists':lists, 'data':data, 'listinfo':json.dumps(lists), 'initial':json.dumps(data), 'navbar':navbar})
 
 @login_required
@@ -226,8 +226,8 @@ def manageusr(request, projectcode):
             grp = Group.objects.get(name='ProjectUser')
             users = [{'id':x.id,'firstname':x.first_name,'lastname':x.last_name,'username':x.username} for x in grp.user_set.all()]
             navbar = []
-            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prjobj.title})
-            navbar.append({'link':'#', 'title':'Manage User'})
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prjobj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':'#', 'title':'Manage User', 'param':['',]})
             return render(request, 'review/manageusr.html', {'projectcode':projectcode, 'groups':groups, 'users':users, 'groupinfo':json.dumps(groups), 'userinfo':json.dumps(users), 'navbar':navbar})
         else:
             return HttpResponse('Project Code Error')
@@ -293,7 +293,7 @@ def projectview(request, projectcode):
         subps = SubProject.latest('WHERE project="%s"' % (prj.code,))
         permlevel = permissionCheck(request, 0, projectcode)
         navbar = []
-        navbar.append({'link':'#', 'title':prj.title})
+        navbar.append({'link':'#', 'title':prj.title, 'param':['',projectcode]})
         return render(request, 'review/project.html', {'project':prj, 'checklists':data, 'subprojects':subps, 'permission':permlevel, 'navbar':navbar})
     else:
         raise Http404("Project does not exist")
@@ -317,8 +317,8 @@ def subproject(request, projectcode, subprojectcode):
         projectobj = getProject(subp.project)
         permlevel = permissionCheck(request, 0, projectobj)
         navbar = []
-        navbar.append({'link':reverse('review:projectview', args=(subp.project,)), 'title':projectobj.title})
-        navbar.append({'link':'#', 'title':subp.title})
+        navbar.append({'link':reverse('review:projectview', args=(subp.project,)), 'title':projectobj.title, 'param':['review:projectview', subp.project]})
+        navbar.append({'link':'#', 'title':subp.title, 'param':['',]})
         return render(request, 'review/subproject.html', {'subproject':subp, 'checklists':data, 'selfcheck':(sccount>0), 'permission':permlevel, 'navbar':navbar})
     else:
         raise Http404("Project does not exist")
@@ -334,9 +334,9 @@ def addsubprj(request, projectcode):
                 outlist.append([x.strip() for idx, x in enumerate(row) if idx < 2])
             navbar = []
             prj = getProject(projectcode)
-            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title})
-            navbar.append({'link':reverse('review:addsubproject', args=(projectcode,)), 'title':'Add SubProject'})
-            navbar.append({'link':'#', 'title':'Preview SubProject'})
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':reverse('review:addsubproject', args=(projectcode,)), 'title':'Add SubProject', 'param':['review:addsubproject', projectcode]})
+            navbar.append({'link':'#', 'title':'Preview SubProject', 'param':['',]})
             return render(request, 'review/previewsubprj.html', {'projectcode':projectcode, 'data':outlist,'initial':json.dumps(outlist), 'navbar':navbar})
         elif 'initial' in request.POST:
             data = json.loads(request.POST['initial'])
@@ -350,8 +350,8 @@ def addsubprj(request, projectcode):
     else:
         navbar = []
         prj = getProject(projectcode)
-        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title})
-        navbar.append({'link':'#', 'title':'Add SubProject'})
+        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+        navbar.append({'link':'#', 'title':'Add SubProject', 'param':['',]})
         return render(request, 'review/addsubprj.html', {'projectcode':projectcode, 'navbar':navbar})
 
 @login_required
@@ -463,9 +463,9 @@ def selfchecknew(request, projectcode, subprojectcode, checklistcode):
                     form['groups'][-1]['items'].append({'id':item.id, 'code':item.code, 'version':item.version, 'name':'item{}'.format(item.id),'title':item.title, 'details':item.details, 'choice':'', 'error':'', 'buginitcount':0, 'bugs':[]})
             subpobj = list(SubProject.latest('WHERE code="%s"'%(subprojectcode,)))
             navbar = []
-            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title})
-            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title})
-            navbar.append({'link':'#', 'title':'New {}'.format(chk.title)})
+            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview', form['project']['code']]})
+            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
+            navbar.append({'link':'#', 'title':'New {}'.format(chk.title), 'param':['',]})
             return render(request, 'review/newselfcheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar, 'navbarinfo':json.dumps(navbar)})
         else:
             raise Http404("CheckList does not exist")
@@ -587,8 +587,8 @@ def selfcheckedit(request, projectcode, reportid):
                     form['groups'][-1]['items'].append({'id':item.id, 'code':item.code, 'version':item.version, 'name':'item{}'.format(item.id),'title':chkitem.title, 'details':chkitem.details, 'choice':item.choice, 'error':'', 'buginitcount':0, 'bugs':[]})
             subpobj = list(SubProject.latest('WHERE code="%s"'%(chk.subproject,)))
             navbar = []
-            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title})
-            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title})
+            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview',form['project']['code']]})
+            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
             navbar.append({'link':'#', 'title':chk.title})
             return render(request, 'review/editselfcheck.html', {'form':form,'initvalue':json.dumps(form),'permission':permlevel, 'navbar':navbar})
 
@@ -751,9 +751,9 @@ def peerchecknew(request, projectcode, subprojectcode, checklistcode):
                     form['groups'][-1]['items'][-1]['bugs'].append({'question':'', 'answer':'', 'status':form['bugstatus'][0][0], 'level':form['buglevel'][0][0]})
             subpobj = list(SubProject.latest('WHERE code="%s"'%(subprojectcode,)))
             navbar = []
-            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title})
-            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title})
-            navbar.append({'link':'#', 'title':'New {}'.format(chk.title)})
+            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview',form['project']['code']]})
+            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
+            navbar.append({'link':'#', 'title':'New {}'.format(chk.title), 'param':['',]})
             return render(request, 'review/newpeercheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar,'navbarinfo':json.dumps(navbar)})
         else:
             raise Http404("CheckList does not exist")
@@ -969,9 +969,9 @@ def peercheckedit(request, projectcode, reportid):
                     form['groups'][-1]['items'][-1]['buginitcount'] = bugcount
             subpobj = list(SubProject.latest('WHERE code="%s"'%(chk.subproject,)))
             navbar = []
-            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title})
-            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title})
-            navbar.append({'link':'#', 'title':chk.title})
+            navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview',form['project']['code']]})
+            navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
+            navbar.append({'link':'#', 'title':chk.title, 'param':['',]})
             return render(request, 'review/editpeercheck.html', {'form':form,'initvalue':json.dumps(form),'permission':permlevel, 'navbar':navbar})
 
 @login_required
@@ -1020,3 +1020,13 @@ def importusr(request):
                     usr.save()
             return HttpResponseRedirect(reverse('review:index', args=()))
     return render(request, 'review/importusr.html', {})
+
+@login_required
+def dashusr(request, projectcode):
+    actions = getNextAction(request, projectcode)
+    prj = getProject(projectcode)
+    navbar = []
+    navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+    navbar.append({'link':'#', 'title':'Dashboard', 'param':['',]})
+    return render(request, 'review/dashusr.html', {'reports':actions, 'navbar':navbar})
+

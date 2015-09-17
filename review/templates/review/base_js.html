@@ -32,7 +32,12 @@
 				{% endif %}
 				<ul class="nav navbar-nav navbar-right">
 					{% if user.is_active %}
-						<li><a href="#">
+						<li>
+							{% if navbar %}
+								<a href="{% url 'review:dashboarduser' navbar.0.param.1 %}">
+							{% else %}
+								<a href="#">
+							{% endif %}
 							{% if user.last_name %}
 								{{ user.last_name }}{{ user.first_name }}
 							{% else %}

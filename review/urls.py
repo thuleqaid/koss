@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
 	url(r'^$', views.index, name='index'),
 	url(r'^import/user$', views.importusr, name='importuser'),
+	url(r'^dashbord/user/(?P<projectcode>\w+)$', views.dashusr, name='dashboarduser'),
 	url(r'^project/(?P<projectcode>\w+)$', views.projectview, name='projectview'),
 	url(r'^project/(?P<projectcode>\w+)/edit$', views.projectedit, name='projectedit'),
 	url(r'^project/(?P<projectcode>\w+)/import/checkitem$', views.importchkitm, name='importcheckitem'),
