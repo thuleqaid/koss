@@ -19,6 +19,17 @@
 				<a class="navbar-brand brand" href="{% url 'review:index' %}">Review System</a>
 			</div>
 			<div class="collapse navbar-collapse" id="the-menu">
+				{% if navbar %}
+					<ul class="nav navbar-nav">
+						{% for navbaritem in navbar %}
+							{% if forloop.counter >= navbar|length %}
+								<li class="active"><a href="{{ navbaritem.link }}">{{ navbaritem.title }}</a></li>
+							{% else %}
+								<li><a href="{{ navbaritem.link }}">{{ navbaritem.title }}</a></li>
+							{% endif %}
+						{% endfor %}
+					</ul>
+				{% endif %}
 				<ul class="nav navbar-nav navbar-right">
 					{% if user.is_active %}
 						<li><a href="#">

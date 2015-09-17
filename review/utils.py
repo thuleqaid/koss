@@ -1,6 +1,7 @@
 import json
 from django.contrib.auth.models import User, Group
-from .models import Project
+from django.http import Http404
+from .models import *
 
 class CSVReader(object):
     CONST_LINETERMINATOR_STRIP = chr(10) + chr(13)
@@ -76,14 +77,7 @@ def permission(request, project=None):
             if group in user.groups.all():
                 ret = 2
                 if project:
-                    if isinstance(project, Project):
-                        prjobj = project
-                    else:
-                        prjlist = list(Project.latest('WHERE code="%s"'%(project,)))
-                        if len(prjlist) > 0:
-                            prjobj = prjlist[0]
-                        else:
-                            prjobj = None
+                    prjobj = getProject(project)
                     if prjobj:
                         users = json.loads(prjobj.users_admin)
                         if user.id in users:
@@ -93,3 +87,59 @@ def permission(request, project=None):
                             if user.id in users:
                                 ret = 3
     return ret
+
+def permissionCheck(request, minlevel, project=None):
+    ''' check whether permlevel >= minlevel '''
+    permlevel = permission(request, project)
+    if permlevel >= minlevel:
+        return permlevel
+    else:
+        raise Http404('No Permission.')
+
+def getProject(project):
+    if isinstance(project, Project):
+        prjobj = project
+    else:
+        prjlist = list(Project.latest('WHERE code="%s"'%(project,)))
+        if len(prjlist) > 0:
+            prjobj = prjlist[0]
+        else:
+            prjobj = None
+    return prjobj
+
+def getProjectSetting(project, checklist=None):
+    prjobj = getProject(project)
+    outdict = { }
+    outdict['choice'] = [Project.ChoiceItem(*x) for x in json.loads(prjobj.choices)]
+    outdict['bugstatus'] = [Project.BugStatus(*x) for x in json.loads(prjobj.bugstatus)]
+    outdict['buglevel'] = [Project.BugCategory(*x) for x in json.loads(prjobj.bugcategory)]
+    return outdict
+
+def getReportStatus(report):
+    grouplist = list(CheckGroupResult.objects.filter(pk__in=json.loads(report.groups)))
+    status = 'IG'
+    keylist = ('IG', 'OK', 'NG', 'BUGA', 'BUGC', 'BUGD')
+    count = dict(zip(keylist,[0]*len(keylist)))
+    for group in grouplist:
+        summary = json.loads(group.summary)
+        for key in keylist:
+            count[key] += summary[key]
+        if group.status == 'NG':
+            status = 'NG'
+        elif group.status == 'OK':
+            if status == 'IG':
+                status = 'OK'
+    count['status']=status
+    return count
+
+def getAuthors(subproject):
+    subplist = list(SubProject.latest('WHERE code="%s"' % (subproject,)))
+    if len(subplist) > 0:
+        subp = subplist[0]
+        chks = [x.code for x in CheckList.latest('WHERE project="%s"' % (subp.project,)) if x.selfcheck]
+        reports = list(CheckListResult.objects.filter(subproject = subp.code).filter(listcode__in = chks).filter(version = 1))
+        authors = [x.author for x in reports]
+    else:
+        authors = []
+    return authors
+

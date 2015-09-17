@@ -66,7 +66,7 @@
 					<div class="panel-body">
 						{% for item in groupinfo.items %}
 							<div class="form-group">
-								<label class="control-label">{{ item.title }}</label>
+								<label class="control-label" data-toggle="tooltip" data-placement="right" title="{{ item.details }}">{{ item.title }}</label>
 								<div class="form-control">
 								{% for radio in form.choice %}
 									<label class="checkbox-inline">
@@ -89,7 +89,13 @@
 										<div class="panel panel-default" id="bug-form-{{ item.name }}-{{ forloop.counter }}">
 											<div class="panel-heading">
 												<h4 class="panel-title">
-													<a data-toggle="collapse" data-parent="#accordion-{{ item.name }}" href="#collapse-{{ item.name }}-{{ forloop.counter }}">指摘{{ forloop.counter }}</a>
+													{% if bug.status.0 == 'A' %}
+														<a data-toggle="collapse" data-parent="#accordion-{{ item.name }}" href="#collapse-{{ item.name }}-{{ forloop.counter }}"><span class="text-danger">指摘{{ forloop.counter }}</span></a>
+													{% elif bug.status.0 == 'C' %}
+														<a data-toggle="collapse" data-parent="#accordion-{{ item.name }}" href="#collapse-{{ item.name }}-{{ forloop.counter }}"><span class="text-primary">指摘{{ forloop.counter }}</span></a>
+													{% else %}
+														<a data-toggle="collapse" data-parent="#accordion-{{ item.name }}" href="#collapse-{{ item.name }}-{{ forloop.counter }}"><span class="text-muted">指摘{{ forloop.counter }}</span></a>
+													{% endif %}
 													{% ifequal forloop.counter 1 %}
 														<a class="pull-right bugdyn" href="javascript:void(0)" onclick="dynclick(this)" id="dyn-{{ item.name }}-{{ forloop.counter }}"><span class="glyphicon glyphicon-plus"></span></a>
 													{% else %}
@@ -142,8 +148,14 @@
 				</div>
 			</div>
 		{% endfor %}
-		<button type="submit" class="btn btn-primary">OK</button>
-		<input type="hidden" name="initvalue" value="{{ initvalue }}">
+		{% if permission > 2 %}
+			<div class="form-group">
+				<div class="text-center">
+					<button type="submit" class="btn btn-primary">OK</button>
+				</div>
+			</div>
+			<input type="hidden" name="initvalue" value="{{ initvalue }}">
+		{% endif %}
 	</form>
 </div>
 <script type="text/javascript">

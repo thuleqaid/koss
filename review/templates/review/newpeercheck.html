@@ -66,7 +66,7 @@
 					<div class="panel-body">
 						{% for item in groupinfo.items %}
 							<div class="form-group">
-								<label class="control-label">{{ item.title }}</label>
+								<label class="control-label" data-toggle="tooltip" data-placement="right" title="{{ item.details }}">{{ item.title }}</label>
 								<div class="form-control">
 								{% for radio in form.choice %}
 									<label class="checkbox-inline">
@@ -142,8 +142,13 @@
 				</div>
 			</div>
 		{% endfor %}
-		<button type="submit" class="btn btn-primary">OK</button>
+		<div class="form-group">
+			<div class="text-center">
+				<button type="submit" class="btn btn-primary">OK</button>
+			</div>
+		</div>
 		<input type="hidden" name="initvalue" value="{{ initvalue }}">
+		<input type="hidden" name="navbarinfo" value="{{ navbarinfo }}">
 	</form>
 </div>
 <script type="text/javascript">
