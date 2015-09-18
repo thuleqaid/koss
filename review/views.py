@@ -304,7 +304,7 @@ def subproject(request, projectcode, subprojectcode):
         subp = subplist[0]
         chks = CheckList.latest('WHERE project="%s"' % (subp.project,))
         data = []
-        reports = [{'title':x.title, 'id':x.id, 'listcode':x.listcode,'status':getReportStatus(x)} for x in CheckListResult.latest('WHERE subproject="%s"' % (subp.code,))]
+        reports = [{'title':x.title, 'id':x.id, 'code':x.code, 'listcode':x.listcode,'lock':x.lockstatus,'status':getReportStatus(x)} for x in CheckListResult.latest('WHERE subproject="%s"' % (subp.code,))]
         sccount = 0
         for chk in chks:
             if len(json.loads(chk.groups)) > 0:
@@ -569,7 +569,7 @@ def selfcheckedit(request, projectcode, reportid):
             form['project'] = {'code':projectcode}
             form['subproject'] = {'code':chk.subproject}
             form['report'] = {'id':reportid}
-            form['checklist'] = {'code':chk.listcode,'version':chk.listversion, 'title':chk.title}
+            form['checklist'] = {'code':chk.listcode,'version':chk.listversion, 'title':chk.title, 'lock':chk.lockstatus}
             prjobj = getProject(projectcode)
             prjsetting = getProjectSetting(prjobj, chklist[0])
             choices_org = prjsetting['choice']
@@ -578,9 +578,9 @@ def selfcheckedit(request, projectcode, reportid):
             form['groups'] = []
             for grp in CheckGroupResult.objects.filter(pk__in = json.loads(chk.groups)).order_by('groupcode'):
                 if grp.status == 'IG':
-                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'valid':'0'},'items':[]})
+                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'summary':json.loads(grp.summary), 'valid':'0'},'items':[]})
                 else:
-                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'valid':'1'},'items':[]})
+                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'summary':json.loads(grp.summary), 'valid':'1'},'items':[]})
                 items = [CheckGroupResult.Choice(*x) for x in json.loads(grp.choices)]
                 for item in items:
                     chkitem = CheckItem.objects.get(pk = item.id)
@@ -932,7 +932,7 @@ def peercheckedit(request, projectcode, reportid):
             form['project'] = {'code':projectcode}
             form['subproject'] = {'code':chk.subproject}
             form['report'] = {'id':reportid}
-            form['checklist'] = {'code':chk.listcode,'version':chk.listversion, 'title':chk.title}
+            form['checklist'] = {'code':chk.listcode,'version':chk.listversion, 'title':chk.title, 'lock':chk.lockstatus}
             authors = getAuthors(chk.subproject)
             if request.user in authors:
                 form['report']['actor'] = True
@@ -952,9 +952,9 @@ def peercheckedit(request, projectcode, reportid):
             form['groups'] = []
             for grp in CheckGroupResult.objects.filter(pk__in = json.loads(chk.groups)).order_by('groupcode'):
                 if grp.status == 'IG':
-                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'valid':'0'},'items':[]})
+                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'summary':json.loads(grp.summary), 'valid':'0'},'items':[]})
                 else:
-                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'valid':'1'},'items':[]})
+                    form['groups'].append({'group':{'reportid':grp.id, 'id':grp.groupid, 'code':grp.groupcode, 'version':grp.groupversion, 'title':grp.grouptitle, 'summary':json.loads(grp.summary), 'valid':'1'},'items':[]})
                 bugs = [CheckGroupResult.Result(*x) for x in json.loads(grp.buglist)]
                 bugrecords = list(CheckBugItem.objects.filter(pk__in = [x.id for x in bugs]).order_by('code'))
                 items = [CheckGroupResult.Choice(*x) for x in json.loads(grp.choices)]
@@ -973,6 +973,23 @@ def peercheckedit(request, projectcode, reportid):
             navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
             navbar.append({'link':'#', 'title':chk.title, 'param':['',]})
             return render(request, 'review/editpeercheck.html', {'form':form,'initvalue':json.dumps(form),'permission':permlevel, 'navbar':navbar})
+
+@login_required
+def lockcheck(request, projectcode, reportcode):
+    report = list(CheckListResult.latest('WHERE code="%s"'%(reportcode,)))[0]
+    if report.lockstatus:
+        report.lockstatus = False
+        report.version += 1
+        report.id = None
+        report.save()
+    else:
+        status = getReportStatus(report)
+        if status['status'] != 'NG':
+            report.lockstatus = True
+            report.version += 1
+            report.id = None
+            report.save()
+    return HttpResponseRedirect(reverse('review:subproject', args=(projectcode, report.subproject)))
 
 @login_required
 def setup(request):

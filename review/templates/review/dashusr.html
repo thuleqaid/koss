@@ -10,7 +10,8 @@
 			<thead>
 				<tr>
 					<th>Title</th>
-					<th>状态</th>
+					<th>作者</th>
+					<th>作业要求</th>
 					<th>OK</th>
 					<th>NG</th>
 					<th>IG</th>
@@ -27,7 +28,16 @@
 						{% else %}
 							<td><a href="{% url 'review:editpeercheck' report.project report.reportid %}">{{ report.reporttitle }}</a></td>
 						{% endif %}
-						<td>{{ report.status }}</td>
+						<td>{{ report.reportauthor }}</td>
+						{% if report.isAuthor %}
+							{% if report.noReviewer %}
+								<td>没有指摘担当</td>
+							{% else %}
+								<td>需要对应指摘</td>
+							{% endif %}
+						{% else %}
+							<td>需要确认修改</td>
+						{% endif %}
 						<td>{{ report.OK }}</td>
 						<td>{{ report.NG }}</td>
 						<td>{{ report.IG }}</td>
@@ -43,7 +53,7 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 		var converter = new showdown.Converter();
-		tds = $(".markdown");
+		var tds = $(".markdown");
 		for (var i = 0; i < tds.length; i++) {
 			tds[i].innerHTML = converter.makeHtml(tds[i].innerHTML);
 		}

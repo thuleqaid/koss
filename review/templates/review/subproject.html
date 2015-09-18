@@ -30,6 +30,7 @@
 						<thead>
 							<tr>
 								<th>Title</th>
+								<th>作者</th>
 								<th>状态</th>
 								<th>OK</th>
 								<th>NG</th>
@@ -43,7 +44,16 @@
 							{% for report in chk.reports %}
 								<tr>
 									<td><a href="{% url 'review:editselfcheck' subproject.project report.id %}">{{ report.title }}</a></td>
-									<td>{{ report.status.status }}</td>
+									<td>{{ report.status.author }}</td>
+									{% ifequal report.status.status 'NG' %}
+										<td>不可关闭</td>
+									{% else %}
+										{% if report.lock %}
+											<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">已关闭</a></td>
+										{% else %}
+											<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">可关闭</a></td>
+										{% endif %}
+									{% endifequal %}
 									<td>{{ report.status.OK }}</td>
 									<td>{{ report.status.NG }}</td>
 									<td>{{ report.status.IG }}</td>
@@ -82,6 +92,7 @@
 						<thead>
 							<tr>
 								<th>Title</th>
+								<th>作者</th>
 								<th>状态</th>
 								<th>OK</th>
 								<th>NG</th>
@@ -95,7 +106,16 @@
 							{% for report in chk.reports %}
 								<tr>
 									<td><a href="{% url 'review:editpeercheck' subproject.project report.id %}">{{ report.title }}</a></td>
-									<td>{{ report.status.status }}</td>
+									<td>{{ report.status.author }}</td>
+									{% ifequal report.status.status 'NG' %}
+										<td>不可关闭</td>
+									{% else %}
+										{% if report.lock %}
+											<td>关闭</td>
+										{% else %}
+											<td>可关闭</td>
+										{% endif %}
+									{% endifequal %}
 									<td>{{ report.status.OK }}</td>
 									<td>{{ report.status.NG }}</td>
 									<td>{{ report.status.IG }}</td>
@@ -115,7 +135,7 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 		var converter = new showdown.Converter();
-		tds = $(".markdown");
+		var tds = $(".markdown");
 		for (var i = 0; i < tds.length; i++) {
 			tds[i].innerHTML = converter.makeHtml(tds[i].innerHTML);
 		}

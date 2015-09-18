@@ -48,8 +48,55 @@
 					{% else %}
 						<li><a href="{% url 'account:login' %}">LogIn</a></li>
 					{% endif %}
+					<li><a href="#" id="helpLink">Help</a></li>
 				</ul>
 			</div>
 		</div>
 	</nav>
+	<div class="modal" id="modalHelp" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+					<h4 class="modal-title" id="modalLabel">Review System帮助</h4>
+				</div>
+				<div class="modal-body markdown-help">##### 建立项目（系统管理员）
+1. 追加可以使用本系统的人员
+2. 新建一个项目
+<br>如：详细设计书反求
+3. 给项目指定管理员
+##### 配置项目（项目管理员）
+1. 设置本项目人员
+2. 导入Checklist的检查项
+3. 给检查项分组
+4. 新建Checklist
+	+ 一个Checklist由多个检查分组构成
+	+ 至少需要有一个SelfCheck类型的Checklist
+5. 添加子项目
+<br>如：XXX详细设计书
+##### 使用规则（项目担当者）
+1. 对于一个子项目，***至少***检查过一个SelfCheck类型的Checklist之后，才能进入互查阶段
+2. 可以忽略整个检查分组（检查内容比较多时间不够时，可以把没有检查的分组先忽略掉，下次再继续）
+3. 修改Checklist时，原本不是忽略（无效）状态的检查分组**不能**改成忽略；反之，可以
+4. 点击检查项目后面的<span class="glyphicon glyphicon-question-sign"></span>，可以查看检查项目的详细说明
+4. 互查阶段，对于同一个检查项目可以提无限多个指摘（可以建立包含一个检查项目的自由指摘Checklist，用于不按检查项目的审查方式）
+5. 子项目的担当者***不能***把指摘改成完成类状态
+	+ 凡是新建过本子项目SelfCheck类型的Checklist的人员，属于担当者
+	+ 凡是新建/修改过本子项目Checklist，且不是担当者的人员，属于检查人员
+6. 点击自己的名字，可以显示***所有子项目***中需要处理的Checklist（包括对应别人的指摘和确认别人的修改）
+</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-warning" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript">
+		$('#helpLink').on('click', function(e) {
+			$('#modalHelp').modal();
+			});
+		var converter = new showdown.Converter();
+		var tds = $(".markdown-help");
+		tds[0].innerHTML = converter.makeHtml(tds[0].innerHTML);
+	</script>
 {% endblock %}

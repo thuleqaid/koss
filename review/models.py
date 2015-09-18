@@ -168,6 +168,7 @@ class CheckListResult(BaseVersionTable):
     listversion = models.PositiveIntegerField()
     groupcount = models.PositiveIntegerField()
     groups     = models.TextField(default=json.dumps([]))
+    lockstatus = models.BooleanField(default=False)
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:

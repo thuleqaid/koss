@@ -116,6 +116,7 @@ def getProjectSetting(project, checklist=None):
     return outdict
 
 def getReportStatus(report):
+    firstver = list(CheckListResult.objects.filter(code = report.code).filter(version = 1))[0]
     grouplist = list(CheckGroupResult.objects.filter(pk__in=json.loads(report.groups)))
     status = 'IG'
     keylist = ('IG', 'OK', 'NG', 'BUGA', 'BUGC', 'BUGD')
@@ -130,6 +131,7 @@ def getReportStatus(report):
             if status == 'IG':
                 status = 'OK'
     count['status']=status
+    count['author']=firstver.author
     return count
 
 def getAuthors(subproject):
@@ -170,6 +172,10 @@ def getNextAction(request, project):
             isReviewer = True
         else:
             isReviewer = False
+        if len(reviewer) < 1:
+            noreviewer = True
+        else:
+            noreviewer = False
         if isAuthor or isReviewer:
             latest = {}
             for report in reports:
@@ -188,20 +194,39 @@ def getNextAction(request, project):
                             joblist[-1]['selfcheck'] = False
                             joblist[-1]['project'] = prjcode
                             joblist[-1]['subproject'] = subp
+                            joblist[-1]['reportauthor'] = report.author
                             joblist[-1]['reportid'] = report.id
                             joblist[-1]['reportcode'] = report.code
                             joblist[-1]['reportversion'] = report.version
                             joblist[-1]['reporttitle'] = report.title
+                            joblist[-1]['isAuthor'] = isAuthor
+                            joblist[-1]['noReviewer'] = False
                         elif (status['BUGA'] == 0 and status['BUGC'] == 0):
                             # 没有指摘（selfcheck）
                             joblist.append(dict(status))
                             joblist[-1]['selfcheck'] = True
                             joblist[-1]['project'] = prjcode
                             joblist[-1]['subproject'] = subp
+                            joblist[-1]['reportauthor'] = report.author
                             joblist[-1]['reportid'] = report.id
                             joblist[-1]['reportcode'] = report.code
                             joblist[-1]['reportversion'] = report.version
                             joblist[-1]['reporttitle'] = report.title
+                            joblist[-1]['isAuthor'] = isAuthor
+                            joblist[-1]['noReviewer'] = False
+                        elif noreviewer:
+                            # 没有确认人
+                            joblist.append(dict(status))
+                            joblist[-1]['selfcheck'] = False
+                            joblist[-1]['project'] = prjcode
+                            joblist[-1]['subproject'] = subp
+                            joblist[-1]['reportauthor'] = report.author
+                            joblist[-1]['reportid'] = report.id
+                            joblist[-1]['reportcode'] = report.code
+                            joblist[-1]['reportversion'] = report.version
+                            joblist[-1]['reporttitle'] = report.title
+                            joblist[-1]['isAuthor'] = isAuthor
+                            joblist[-1]['noReviewer'] = True
                     elif isReviewer:
                         if status['BUGC'] > 0:
                             # 存在需要确认的修改
@@ -209,10 +234,13 @@ def getNextAction(request, project):
                             joblist[-1]['selfcheck'] = False
                             joblist[-1]['project'] = prjcode
                             joblist[-1]['subproject'] = subp
+                            joblist[-1]['reportauthor'] = report.author
                             joblist[-1]['reportid'] = report.id
                             joblist[-1]['reportcode'] = report.code
                             joblist[-1]['reportversion'] = report.version
                             joblist[-1]['reporttitle'] = report.title
+                            joblist[-1]['isAuthor'] = False
+                            joblist[-1]['noReviewer'] = False
                     else:
                         pass
     return joblist

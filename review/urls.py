@@ -19,5 +19,6 @@ urlpatterns = [
 	url(r'^project/(?P<projectcode>\w+)/selfcheck/edit/(?P<reportid>\w+)$', views.selfcheckedit, name='editselfcheck'),
 	url(r'^project/(?P<projectcode>\w+)/peercheck/new/(?P<subprojectcode>\w+)/(?P<checklistcode>\w+)$', views.peerchecknew, name='newpeercheck'),
 	url(r'^project/(?P<projectcode>\w+)/peercheck/edit/(?P<reportid>\w+)$', views.peercheckedit, name='editpeercheck'),
+	url(r'^project/(?P<projectcode>\w+)/lockcheck/(?P<reportcode>\w+)$', views.lockcheck, name='lockcheck'),
 	url(r'^setup$', views.setup, name='setup'),
 	]
