@@ -1047,3 +1047,21 @@ def dashusr(request, projectcode):
     navbar.append({'link':'#', 'title':'Dashboard', 'param':['',]})
     return render(request, 'review/dashusr.html', {'reports':actions, 'navbar':navbar})
 
+@login_required
+def projectdash(request, projectcode):
+    prj = getProject(projectcode)
+    prjinfo = getProjectInfo(prj)
+    datakeys = ('c_locked', 'c_ok', 'c_ng')
+    chartinfo = { 'checklist':[] }
+    for key in datakeys:
+        chartinfo[key] = []
+    for chk in sorted(prjinfo.keys()):
+        chartinfo['maxcount'] = len(prjinfo[chk]['subproject'])
+        chartinfo['checklist'].append(prjinfo[chk]['checklist'].title)
+        for key in datakeys:
+            chartinfo[key].append(prjinfo[chk][key])
+    navbar = []
+    navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+    navbar.append({'link':'#', 'title':'Dashboard', 'param':['',]})
+    return render(request, 'review/dashproject.html', {'chartinfo':chartinfo, 'navbar':navbar})
+

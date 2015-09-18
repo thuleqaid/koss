@@ -13,6 +13,9 @@
 					<abbr title="Edit Project"><span class="glyphicon glyphicon-pencil"></span></abbr>
 				</a>
 			{% endif %}
+			<a class="pull-right" href="{% url 'review:projectdash' project.code %}">
+				<abbr title="DashBoard"><span class="glyphicon glyphicon-signal"></span></abbr>
+			</a>
 		</h2>
 	</div>
 	{% if permission > 3 %}

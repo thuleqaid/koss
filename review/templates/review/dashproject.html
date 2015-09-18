@@ -1,0 +1,62 @@
+{% extends 'review/base_js.html' %}
+{% load staticfiles %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+{{ block.super }}
+<div class="container">
+<div id="container"></div>
+</div>
+<script type="text/javascript" src="{% static 'review/highcharts/highcharts.js' %}"></script>
+<script type="text/javascript">
+	var chart1;
+	$(document).ready(function() {
+		chart1 = new Highcharts.Chart({
+			chart: {
+				renderTo: 'container',
+				type: 'column',
+				borderWidth: 1
+			},
+			title: {
+				text: 'Checklist Status'
+			},
+			xAxis: {
+				categories: {{ chartinfo.checklist|safe }}
+			},
+			yAxis: {
+				title: {
+					text: '子项目数'
+				},
+				plotLines: [{
+					value: {{ chartinfo.maxcount }},
+					width: 2,
+					color: '#821740',
+					label: {
+						text: '子项目总数',
+						style: {
+							color: '#898989'
+						}
+					}
+					}],
+				max: {{ chartinfo.maxcount }}
+			},
+			plotOptions: {
+				column: {
+					stacking: 'normal'
+				}
+			},
+			series: [{
+				name: '不可关闭',
+				data: {{ chartinfo.c_ng }}
+				}, {
+				name: '可关闭',
+				data: {{ chartinfo.c_ok }}
+				}, {
+				name: '已关闭',
+				data: {{ chartinfo.c_locked }}
+				}]
+			});
+	});
+</script>
+{% endblock %}

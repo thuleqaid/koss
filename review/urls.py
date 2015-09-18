@@ -6,6 +6,7 @@ urlpatterns = [
 	url(r'^import/user$', views.importusr, name='importuser'),
 	url(r'^dashbord/user/(?P<projectcode>\w+)$', views.dashusr, name='dashboarduser'),
 	url(r'^project/(?P<projectcode>\w+)$', views.projectview, name='projectview'),
+	url(r'^project/(?P<projectcode>\w+)/dashboard$', views.projectdash, name='projectdash'),
 	url(r'^project/(?P<projectcode>\w+)/edit$', views.projectedit, name='projectedit'),
 	url(r'^project/(?P<projectcode>\w+)/import/checkitem$', views.importchkitm, name='importcheckitem'),
 	url(r'^project/(?P<projectcode>\w+)/manage/checkgroup$', views.managechkgrp, name='managecheckgroup'),
