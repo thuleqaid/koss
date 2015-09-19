@@ -976,6 +976,7 @@ def peercheckedit(request, projectcode, reportid):
 
 @login_required
 def lockcheck(request, projectcode, reportcode):
+    permlevel = permissionCheck(request, 3)
     report = list(CheckListResult.latest('WHERE code="%s"'%(reportcode,)))[0]
     if report.lockstatus:
         report.lockstatus = False

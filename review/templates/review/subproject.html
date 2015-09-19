@@ -7,9 +7,7 @@
 <div class="container">
 	<div class="page-header">
 		<h2>详细情报：</h2>
-		<div class="markdown">
-			{{ subproject.details }}
-		</div>
+		<div class="markdown">{{ subproject.details }}</div>
 	</div>
 	<h3>SelfCheck</h3>
 	<ul>
@@ -48,10 +46,18 @@
 									{% ifequal report.status.status 'NG' %}
 										<td>不可关闭</td>
 									{% else %}
-										{% if report.lock %}
-											<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">已关闭</a></td>
+										{% if permission > 2 %}
+											{% if report.lock %}
+												<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">已关闭</a></td>
+											{% else %}
+												<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">可关闭</a></td>
+											{% endif %}
 										{% else %}
-											<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">可关闭</a></td>
+											{% if report.lock %}
+												<td>已关闭</td>
+											{% else %}
+												<td>可关闭</td>
+											{% endif %}
 										{% endif %}
 									{% endifequal %}
 									<td>{{ report.status.OK }}</td>
@@ -110,10 +116,18 @@
 									{% ifequal report.status.status 'NG' %}
 										<td>不可关闭</td>
 									{% else %}
-										{% if report.lock %}
-											<td>关闭</td>
+										{% if permission > 2 %}
+											{% if report.lock %}
+												<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">已关闭</a></td>
+											{% else %}
+												<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">可关闭</a></td>
+											{% endif %}
 										{% else %}
-											<td>可关闭</td>
+											{% if report.lock %}
+												<td>已关闭</td>
+											{% else %}
+												<td>可关闭</td>
+											{% endif %}
 										{% endif %}
 									{% endifequal %}
 									<td>{{ report.status.OK }}</td>
