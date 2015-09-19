@@ -8,7 +8,7 @@
 	<div class="page-header">
 		<h2>
 			{{ project.title }}
-			{% if permission > 3 %}
+			{% if permission.project %}
 				<a href="{% url 'review:projectedit' project.code %}">
 					<abbr title="Edit Project"><span class="glyphicon glyphicon-pencil"></span></abbr>
 				</a>
@@ -18,7 +18,7 @@
 			</a>
 		</h2>
 	</div>
-	{% if permission > 3 %}
+	{% if permission.manage %}
 		<ul>
 			<li><a href="{% url 'review:manageuser' project.code %}">Manage User</a></li>
 			<li><a href="{% url 'review:importcheckitem' project.code %}">Import CheckItems</a></li>

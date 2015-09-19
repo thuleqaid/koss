@@ -235,46 +235,51 @@ def manageusr(request, projectcode):
 @login_required
 def projectedit(request, projectcode):
     if request.method == 'POST':
-        initial = json.loads(request.POST['initial'])
-        form = ProjectForm(request.POST, initial=initial)
-        if form.is_valid():
-            if form.has_changed():
-                code = form.cleaned_data['code']
-                if code:
-                    prjs = list(Project.objects.filter(code=code).filter(version__gte=form.cleaned_data['version']))
+        form = json.loads(request.POST['initial'])
+        form['title'] = request.POST.get('title','').strip()
+        form['status'] = request.POST['status']
+        if form['title'] == '':
+            form['title_error'] = 'Empty Project Name'
+            return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':request.POST['initial'],'navbar':json.loads(request.POST['navbarinfo']),'navbarinfo':request.POST['navbarinfo']})
+        else:
+            initial = json.loads(request.POST['initial'])
+            if form['title'] != initial['title'] or form['status'] != initial['status']:
+                if form['code']:
+                    prjs = list(Project.objects.filter(code=form['code']).filter(version__gte=form['version']))
                     if len(prjs) > 1:
-                        form.add_error('version', 'Someone has updated the project.')
-                        return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':json.dumps(initial),})
+                        form['version_error'] = 'Someone has updated the project.'
+                        return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':request.POST['initial'],'navbar':json.loads(request.POST['navbarinfo']),'navbarinfo':request.POST['navbarinfo']})
                     else:
                         prj = prjs[0]
                         prj.version += 1
-                        prj.title = form.cleaned_data['title']
-                        prj.status = form.cleaned_data['status']
+                        prj.title = form['title']
+                        prj.status = form['status']
                         prj.author = request.user
                         prj.id = None
                         prj.save()
                 else:
                     codeno = Project.nextCode(Project.DefaultCategory)
-                    prj = Project(title=form.cleaned_data['title'], status=form.cleaned_data['status'])
+                    prj = Project(title=form['title'], status=form['status'])
                     prj.author = request.user
                     prj.setCode(Project.DefaultCategory, codeno)
                     prj.save()
-            return HttpResponseRedirect(reverse('review:index', args=()))
+            return HttpResponseRedirect(reverse('review:projectview', args=(prj.code,)))
+        return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':json.dumps(initial),'navbar':navbar})
     else:
+        navbar = []
         if projectcode == '0':
             # add new project
             permlevel = permissionCheck(request, 9)
+            initial = {'title':'', 'status':Project.StatusChoice[0][0], 'choices':Project.StatusChoice, 'code':'', 'version':0, 'title_error':'', 'version_error':'', 'disable':False}
         else:
             # modify project
             permlevel = permissionCheck(request, 4, projectcode)
-        prjlist = list(Project.latest('WHERE code="%s"'%(projectcode,)))
-        if len(prjlist) > 0:
+            prjlist = list(Project.latest('WHERE code="%s"'%(projectcode,)))
             prj = prjlist[0]
-            initial = {'title':prj.title, 'status':prj.status, 'code':prj.code, 'version':prj.version}
-        else:
-            initial = {'title':'', 'status':Project.StatusChoice[0][0], 'code':'', 'version':0}
-        form = ProjectForm(initial, initial=initial)
-    return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':json.dumps(initial),})
+            initial = {'title':prj.title, 'status':prj.status, 'choices':Project.StatusChoice, 'code':prj.code, 'version':prj.version, 'title_error':'', 'version_error':'', 'disable':prj.status != Project.StatusChoice[0][0]}
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':'#', 'title':'Edit Project', 'param':['',]})
+        return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':initial,'initial':json.dumps(initial),'navbar':navbar,'navbarinfo':json.dumps(navbar)})
 
 def projectview(request, projectcode):
     prjlist = list(Project.latest('WHERE code="%s"'%(projectcode,)))
@@ -292,9 +297,25 @@ def projectview(request, projectcode):
                 'groups':[{'title':grpmap[x.code], 'id':x.id, 'code':x.code, 'version':x.version} for x in groups]})
         subps = SubProject.latest('WHERE project="%s"' % (prj.code,))
         permlevel = permissionCheck(request, 0, projectcode)
+        permdict = {}
+        if prj.status == Project.StatusInit:
+            # 项目状态修改权限
+            permdict['project'] = (permlevel > 3)
+            # 管理类权限设置
+            permdict['manage'] = (permlevel > 3)
+        elif prj.status == Project.StatusOpen:
+            # 项目状态修改权限
+            permdict['project'] = (permlevel > 3)
+            # 管理类权限设置
+            permdict['manage'] = (permlevel > 3)
+        else:
+            # 项目状态修改权限
+            permdict['project'] = (permlevel > 3)
+            # 项目关闭，不可修改
+            permdict['manage'] = False
         navbar = []
         navbar.append({'link':'#', 'title':prj.title, 'param':['',projectcode]})
-        return render(request, 'review/project.html', {'project':prj, 'checklists':data, 'subprojects':subps, 'permission':permlevel, 'navbar':navbar})
+        return render(request, 'review/project.html', {'project':prj, 'checklists':data, 'subprojects':subps, 'permission':permdict, 'navbar':navbar})
     else:
         raise Http404("Project does not exist")
 

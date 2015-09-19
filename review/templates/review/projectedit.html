@@ -1,7 +1,7 @@
 {% extends 'review/base_js.html' %}
 
 {% block title %}
-{% if projectid > 0 %}
+{% if projectcode|length > 1 %}
 Project Edit
 {% else %}
 Project New
@@ -13,46 +13,42 @@ Project New
 <div class="container">
 	<form class="form" action="{% url 'review:projectedit' projectcode %}" method="POST">
 		{% csrf_token %}
-		{% if form.version.errors %}
-		<ul class="text-danger">
-			{% for error in form.version.errors %}
-				<li>{{ error }}</li>
-			{% endfor %}
-		</ul>
+		{% if form.version_error %}
+			<span class="text-danger">{{ form.version_error }}</span>
 		{% endif %}
 		<div class="form-group">
-			<label for="{{ form.title.id_for_label }}" class="control-label">{{ form.title.label }}</label>
-			{{ form.title }}
-			{% if form.title.errors %}
-			<span class="help-block">
-			<ul class="text-danger">
-				{% for error in form.title.errors %}
-					<li>{{ error }}</li>
-				{% endfor %}
-			</ul>
-			</span>
+			<label for="id_title" class="control-label">Title</label>
+			<input class="form-control" id="id_title" name="title" type="text" value="{{ form.title }}" />
+			{% if form.title_error %}
+				<span class="help-block">
+					<label class="text-danger">{{ form.title_error }}</label>
+				</span>
 			{% endif %}
 		</div>
 		<div class="form-group">
-			<label for="{{ form.status.id_for_label }}" class="control-label">{{ form.status.label }}</label>
+			<label class="control-label">Status</label>
 			<div class="form-control">
-				{% for radio in form.status %}
-				<label class="radio-inline" for="{{ radio.id_for_label }}">{{ radio.tag }}{{ radio.choice_label }}</label>
+				{% for radio in form.choices %}
+					<div class="radio-inline">
+						{% ifequal radio.0 form.status %}
+							<label><input id="id_status_{{ forloop.counter }}" name="status" type="radio" value="{{ radio.0 }}" checked />{{ radio.1 }}</label>
+						{% else %}
+							{% ifequal forloop.counter 1 %}
+								{% if form.disable %}
+									<label><input id="id_status_{{ forloop.counter }}" name="status" type="radio" value="{{ radio.0 }}" disabled />{{ radio.1 }}</label>
+								{% else %}
+									<label><input id="id_status_{{ forloop.counter }}" name="status" type="radio" value="{{ radio.0 }}" />{{ radio.1 }}</label>
+								{% endif %}
+							{% else %}
+								<label><input id="id_status_{{ forloop.counter }}" name="status" type="radio" value="{{ radio.0 }}" />{{ radio.1 }}</label>
+							{% endifequal %}
+						{% endifequal %}
+					</div>
 				{% endfor %}
 			</div>
-			{% if form.status.errors %}
-			<span class="help-block">
-			<ul class="text-danger">
-				{% for error in form.status.errors %}
-					<li>{{ error }}</li>
-				{% endfor %}
-			</ul>
-			</span>
-			{% endif %}
 		</div>
-		{{ form.code }}
-		{{ form.version }}
 		<input type="hidden" name="initial" value="{{ initial }}">
+		<input type="hidden" name="navbarinfo" value="{{ navbarinfo }}">
 		<button type="submit" class="btn btn-primary">OK</button>
 	</form>
 </div>

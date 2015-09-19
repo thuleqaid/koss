@@ -61,15 +61,16 @@ class BaseVersionTable(models.Model):
 @python_2_unicode_compatible
 class Project(BaseVersionTable):
     DefaultCategory = 'PRJ'
+    StatusInit   = 'IN'
     StatusOpen   = 'OP'
     StatusClosed = 'ED'
-    StatusChoice = ((StatusOpen, 'Open'), (StatusClosed, 'Closed'),)
+    StatusChoice = ((StatusInit, 'Initial'), (StatusOpen, 'Open'), (StatusClosed, 'Closed'),)
     ChoiceItem = collections.namedtuple('ChoiceItem', ['valid','value','text'])
     BugStatus = collections.namedtuple('BugStatus', ['valid','value','text'])
     BugCategory = collections.namedtuple('BugCategory', ['valid','value','text'])
     author = models.ForeignKey(User)
     title = models.CharField(max_length=240)
-    status = models.CharField(max_length=2, choices=StatusChoice, default=StatusOpen)
+    status = models.CharField(max_length=2, choices=StatusChoice, default=StatusInit)
     choices = models.TextField(default=json.dumps([ChoiceItem(True,'IG','関係なし'), ChoiceItem(True, 'OK', 'OK'), ChoiceItem(True, 'NG', '問題あり')])) # check item choices
     bugstatus = models.TextField(default=json.dumps([BugStatus(True, 'A1', '修正中'), BugStatus(True, 'C1', '確認待ち'), BugStatus(True, 'D1', '完成'), BugStatus(True, 'D2', '変更不要'), BugStatus(True, 'D3', '転記')]))
     bugcategory= models.TextField(default=json.dumps([BugCategory(True, 'A1', '機能不具合'), BugCategory(True, 'E1', '成果物不具合'),]))
