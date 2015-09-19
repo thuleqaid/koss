@@ -19,9 +19,9 @@
 					<select name="bug-BUGID-status-BUGIDX" id="bug-BUGID-status-BUGIDX" class="form-control">
 						{% for choice in form.bugstatus %}
 							{% ifequal forloop.counter 1 %}
-								<option value="{{ choice.0 }}" selected >{{ choice.1 }}</option>
+								<option value="{{ choice.0 }}" selected >{{ choice.0.0 }} {{ choice.1 }}</option>
 							{% else %}
-								<option value="{{ choice.0 }}" >{{ choice.1 }}</option>
+								<option value="{{ choice.0 }}" >{{ choice.0.0 }} {{ choice.1 }}</option>
 							{% endifequal %}
 						{% endfor %}
 					</select>
@@ -133,9 +133,9 @@
 													<select name="bug-{{ item.name }}-status-{{ forloop.counter }}" id="bug-{{ item.name }}-status-{{ forloop.counter }}" class="form-control">
 														{% for choice in form.bugstatus %}
 															{% ifequal bug.status choice.0 %}
-																<option value="{{ choice.0 }}" selected >{{ choice.1 }}</option>
+																<option value="{{ choice.0 }}" selected >{{ choice.0.0 }} {{ choice.1 }}</option>
 															{% else %}
-																<option value="{{ choice.0 }}">{{ choice.1 }}</option>
+																<option value="{{ choice.0 }}">{{ choice.0.0 }} {{ choice.1 }}</option>
 															{% endifequal %}
 														{% endfor %}
 													</select>

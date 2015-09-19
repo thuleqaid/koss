@@ -1,13 +1,17 @@
-## 工作流
-1. 新建Project
-2. 添加人员，设置分组（可选）
-3. 配置Checklist
+## ToDo List
+* 项目的指摘状态以及指摘等级的设置功能
+* 项目的初始状态改为配置中（这个状态下可以删除指摘状态以及指摘等级，一般情况只能增加和修改）
+* 检查项目、分组名、Checklist名的修改功能
+* 变更履历的表示功能
+	* 检查项目
+	* 检查分组
+	* Checklist
+	* Report
+	* 指摘
+* 子项目增加规模（成果量）设置功能（用于统计指摘率）
+* Report增加副标题以及Review形式、Review时间、成果物版本、参与人员设置功能
+* Dashboard页面增加分组功能（用于对子项目进行分组统计）
+* Dashboard页面增加进度曲线图（x轴：日期，y轴：进度）
+* Dashboard页面指摘分类饼图
+* 情报共享平台
 
-## 配置Checklist
-设计方针
-* CheckItem只含有检查内容，不包括回答选项
-* CheckItem在所有Project之间共用
-* Project之间，CheckGroup不共用
-* CheckGroup以JSON方式保存组内所有CheckItem
-* Project之间，Checklist不共用
-* Checklist包含所有CheckGroup和回答配置方案
