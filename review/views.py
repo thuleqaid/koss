@@ -487,7 +487,9 @@ def selfchecknew(request, projectcode, subprojectcode, checklistcode):
             navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview', form['project']['code']]})
             navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
             navbar.append({'link':'#', 'title':'New {}'.format(chk.title), 'param':['',]})
-            return render(request, 'review/newselfcheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar, 'navbarinfo':json.dumps(navbar)})
+            permlevel = permissionCheck(request, 0, prjobj)
+            permdict = {'save': (permlevel > 2) and (prjobj.status == 'OP') }
+            return render(request, 'review/newselfcheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'permission':permdict})
         else:
             raise Http404("CheckList does not exist")
 
