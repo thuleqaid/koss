@@ -16,7 +16,8 @@ def index(request):
     prepareDB()
     prjs = Project.latest()
     permlevel = permissionCheck(request, 0)
-    return render(request, 'review/index.html', {'projects':prjs,'permission':permlevel})
+    permdict = {'superuser':permlevel >= 9, 'systemuser':permlevel >= 2}
+    return render(request, 'review/index.html', {'projects':prjs,'permission':permdict})
 
 @login_required
 def importchkitm(request, projectcode):
@@ -222,13 +223,15 @@ def manageusr(request, projectcode):
         prjlist = list(Project.latest('WHERE code="%s"'%(projectcode,)))
         if len(prjlist) > 0:
             prjobj = prjlist[0]
+            permlevel = permissionCheck(request, 4, prjobj)
+            permdict = {'projectadmin':prjobj.status != Project.StatusClosed }
             groups = [json.loads(prjobj.users_admin),json.loads(prjobj.users)]
             grp = Group.objects.get(name='ProjectUser')
             users = [{'id':x.id,'firstname':x.first_name,'lastname':x.last_name,'username':x.username} for x in grp.user_set.all()]
             navbar = []
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prjobj.title, 'param':['review:projectview', projectcode]})
             navbar.append({'link':'#', 'title':'Manage User', 'param':['',]})
-            return render(request, 'review/manageusr.html', {'projectcode':projectcode, 'groups':groups, 'users':users, 'groupinfo':json.dumps(groups), 'userinfo':json.dumps(users), 'navbar':navbar})
+            return render(request, 'review/manageusr.html', {'projectcode':projectcode, 'groups':groups, 'users':users, 'groupinfo':json.dumps(groups), 'userinfo':json.dumps(users), 'navbar':navbar, 'permission':permdict})
         else:
             return HttpResponse('Project Code Error')
 

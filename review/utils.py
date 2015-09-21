@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import json
 from django.contrib.auth.models import User, Group
 from django.http import Http404

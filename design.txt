@@ -1,3 +1,23 @@
+## Flow
+Index Page
+1	ProjectEdit Page(SuperAdministrator)
+1	ImportUser Page(SuperAdministrator)
+1	ProjectView Page(SystemUser)
+1		ProjectEdit Page(ProjectAdministrator)
+1		ManageUser Page(ProjectAdministrator)
+		ImportCheckItem Page(ProjectAdministrator)
+		ManageCheckGroup Page(ProjectAdministrator)
+		ManageCheckList Page(ProjectAdministrator)
+		AddSubProject Page(ProjectAdministrator)
+		ProjectDashboard Page(SystemUser)
+		UserDashboard Page(ProjectUser)
+		SubProject Page(SystemUser)
+			NewSelfCheck Page(SystemUser for view, ProjectUser for update)
+			EditSelfCheck Page(SystemUser for view, ProjectUser for update)
+			NewPeerCheck Page(SystemUser for view, ProjectUser for update)
+			EditPeerCheck Page(SystemUser for view, ProjectUser for update)
+			SwitchReport Link(ProjectUser)
+
 ## ToDo List
 * 项目的指摘状态以及指摘等级的设置功能
 * 项目的初始状态改为配置中（这个状态下可以删除指摘状态以及指摘等级，一般情况只能增加和修改）

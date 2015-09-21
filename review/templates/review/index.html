@@ -5,18 +5,26 @@
 {% block body %}
 {{ block.super }}
 <div class="container">
-	{% ifequal permission 9 %}
+	{% if permission.superuser %}
 		<a href="{% url 'review:importuser' %}">Import User</a>
-	{% endifequal %}
+	{% endif %}
 	<table class="table table-hover table-striped" id="prjtable">
 		<thead>
-			<td><a href="{% url 'review:projectedit' 0 %}"><abbr title="New Project"><span class="glyphicon glyphicon-plus"></span></abbr></a>Title</td>
+			{% if permission.superuser %}
+				<td><a href="{% url 'review:projectedit' 0 %}"><abbr title="New Project"><span class="glyphicon glyphicon-plus"></span></abbr></a>Title</td>
+			{% else %}
+				<td>Title</td>
+			{% endif %}
 			<td>Status</td>
 		</thead>
 		<tbody>
 		{% for prj in projects %}
 			<tr>
-				<td><a href="{% url 'review:projectview' prj.code %}">{{ prj.title }}</a></td>
+				{% if permission.systemuser %}
+					<td><a href="{% url 'review:projectview' prj.code %}">{{ prj.title }}</a></td>
+				{% else %}
+					<td>{{ prj.title }}</td>
+				{% endif %}
 				<td>{{ prj.status }}</td>
 			</tr>
 		{% endfor %}
