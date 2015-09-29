@@ -295,3 +295,12 @@ def getProjectInfo(project):
         outinfo[chk.code]['c_ng'] = count0_unlockable
     return outinfo
 
+def getUserName(user):
+    if isinstance(user, User):
+        if user.last_name:
+            retname = user.last_name + user.first_name
+        else:
+            retname = user.username
+    else:
+        retname = ''
+    return retname

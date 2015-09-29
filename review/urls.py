@@ -15,6 +15,7 @@ urlpatterns = [
 	url(r'^project/(?P<projectcode>\w+)/add/checkgroup$', views.addchkgrp, name='addcheckgroup'),
 	url(r'^project/(?P<projectcode>\w+)/add/checklist$', views.addchklst, name='addchecklist'),
 	url(r'^project/(?P<projectcode>\w+)/add/subproject$', views.addsubprj, name='addsubproject'),
+	url(r'^project/(?P<projectcode>\w+)/modify/checkitem/(?P<itemcode>\w+)$', views.modifychkitm, name='modifycheckitem'),
 	url(r'^project/(?P<projectcode>\w+)/sub/(?P<subprojectcode>\w+)$', views.subproject, name='subproject'),
 	url(r'^project/(?P<projectcode>\w+)/selfcheck/new/(?P<subprojectcode>\w+)/(?P<checklistcode>\w+)$', views.selfchecknew, name='newselfcheck'),
 	url(r'^project/(?P<projectcode>\w+)/selfcheck/edit/(?P<reportid>\w+)$', views.selfcheckedit, name='editselfcheck'),

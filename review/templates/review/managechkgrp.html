@@ -20,7 +20,7 @@
 			<tbody>
 				{% for row in data %}
 					<tr>
-						<td>{{ row.item.code }}. {{ row.item.title }}</td>
+						<td><a href="{% url 'review:modifycheckitem' projectcode row.item.code %}">{{ row.item.code }}. {{ row.item.title }}</a></td>
 						{% for grp in row.groups %}
 							<td>
 								<div class="switch">

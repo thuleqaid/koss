@@ -51,6 +51,62 @@ def importchkitm(request, projectcode):
         return render(request, 'review/importchkitm.html', {'projectcode':projectcode, 'navbar':navbar})
 
 @login_required
+def modifychkitm(request, projectcode, itemcode):
+    if request.method == 'POST':
+        items = json.loads(request.POST['initial'])
+        form = {}
+        form['title'] = request.POST.get('title','').strip()
+        form['details'] = request.POST.get('details','').strip()
+        if form['title'] == '':
+            form['title_error'] = 'Empty Title'
+            return render(request, 'review/modifychkitm.html', {'projectcode':projectcode, 'itemcode':itemcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
+        else:
+            if form['title'] != items[-1]['title'] or form['details'] != items[-1]['details']:
+                # form changed
+                chkitem = CheckItem.objects.get(pk = items[-1]['id'])
+                chkitem.id = None
+                chkitem.title = form['title']
+                chkitem.details = form['details']
+                chkitem.version += 1
+                chkitem.author = request.user
+                chkitem.save()
+                grplist = list(CheckGroup.latest('WHERE project="%s"'%(projectcode,)))
+                chklist = list(CheckList.latest('WHERE project="%s"'%(projectcode,)))
+                for grp in grplist:
+                    details = grp.unpackDetails(grp.details)
+                    for idx,detail in enumerate(details):
+                        if detail.code == chkitem.code:
+                            details[idx] = CheckGroup.GroupDetailItem(valid=True, code=chkitem.code, version=chkitem.version, id=chkitem.id)
+                            break
+                    else:
+                        continue
+                    grp.details = json.dumps(details)
+                    grp.id = None
+                    grp.version += 1
+                    grp.author = request.user
+                    grp.save()
+            else:
+                # form unchanged
+                pass
+            return HttpResponseRedirect(reverse('review:managecheckgroup', args=(projectcode,)))
+    else:
+        navbar = []
+        prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
+        items = []
+        for item in list(CheckItem.objects.filter(code=itemcode).filter(project=projectcode).order_by('version')):
+            items.append({'title':item.title, 'details':item.details, 'version':item.version, 'author':getUserName(item.author), 'id':item.id})
+        form  = {}
+        if len(items) > 0:
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':reverse('review:managecheckgroup', args=(projectcode,)), 'title':'Manage CheckGroup', 'param':['review:managecheckgroup', projectcode]})
+            navbar.append({'link':'#', 'title':'Modify CheckItem', 'param':['',]})
+            form['title'] = items[-1]['title']
+            form['details'] = items[-1]['details']
+            return render(request, 'review/modifychkitm.html', {'projectcode':projectcode, 'itemcode':itemcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
+        else:
+            raise Http404('No Checkitem.')
+@login_required
 def managechkgrp(request, projectcode):
     if request.method == 'POST':
         groups = json.loads(request.POST['groupinfo'])
