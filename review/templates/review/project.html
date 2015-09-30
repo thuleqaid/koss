@@ -62,9 +62,7 @@
 						<a href="{% url 'review:modifysubproject' project.code subp.code %}"><abbr title="Edit Project"><span class="glyphicon glyphicon-pencil"></span></abbr></a>
 					{% endif %}
 				</td>
-				<td>
-					{{ subp.details }}
-				</td>
+				<td class="markdown">{{ subp.details }}</td>
 			</tr>
 		{% endfor %}
 		</tbody>
@@ -73,6 +71,11 @@
 <script type="text/javascript">
 	$(document).ready(function() {
 			$('#prjtable').DataTable();
+			var converter = new showdown.Converter();
+			var tds = $(".markdown");
+			for (var i = 0; i < tds.length; i++) {
+				tds[i].innerHTML = converter.makeHtml(tds[i].innerHTML);
+			}
 		});
 </script>
 {% endblock %}

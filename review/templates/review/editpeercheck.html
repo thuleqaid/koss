@@ -172,7 +172,7 @@
 		{% endfor %}
 		{% if form.checklist.lock %}
 		{% else %}
-			{% if permission > 2 %}
+			{% if permission.save %}
 				<div class="form-group">
 					<div class="text-center">
 						<button type="submit" class="btn btn-primary">OK</button>
@@ -196,12 +196,15 @@
 	function grpclick(clickitem) {
 		var grplink = $(clickitem)[0];
 		var hiditem = $('#group-'+grplink.id);
+		var collapse = $('#collapse'+grplink.id.substr(6))
 		var curstatus = 1 - parseInt(hiditem.val());
 		hiditem.val(curstatus);
 		if (curstatus == 0) {
 			grplink.text="無効";
+			collapse.collapse('hide');
 		} else {
 			grplink.text="有効";
+			collapse.collapse('show');
 		}
 	}
 	function dynclick(clickitem) {

@@ -14,7 +14,7 @@
 	{% for chk in checklists %}
 		{% if chk.selfcheck %}
 			<li>
-				{% if permission > 2 %}
+				{% if permission.projectuser %}
 					{% if chk.clickable %}
 						<a href="{% url 'review:newselfcheck' subproject.project subproject.code chk.code %}">{{ chk.title }}</a>
 					{% else %}
@@ -46,7 +46,7 @@
 									{% ifequal report.status.status 'NG' %}
 										<td>不可关闭</td>
 									{% else %}
-										{% if permission > 2 %}
+										{% if permission.projectuser %}
 											{% if report.lock %}
 												<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">已关闭</a></td>
 											{% else %}
@@ -80,7 +80,7 @@
 	{% for chk in checklists %}
 		{% if not chk.selfcheck %}
 			<li>
-				{% if permission > 2 %}
+				{% if permission.projectuser %}
 					{% if selfcheck %}
 						{% if chk.clickable %}
 							<a href="{% url 'review:newpeercheck' subproject.project subproject.code chk.code %}">{{ chk.title }}</a>
@@ -116,7 +116,7 @@
 									{% ifequal report.status.status 'NG' %}
 										<td>不可关闭</td>
 									{% else %}
-										{% if permission > 2 %}
+										{% if permission.projectuser %}
 											{% if report.lock %}
 												<td><a data-toggle="tooltip" data-placement="right" title="切换关闭/可编辑状态" href="{% url 'review:lockcheck' subproject.project report.code %}">已关闭</a></td>
 											{% else %}

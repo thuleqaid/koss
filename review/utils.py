@@ -133,7 +133,7 @@ def getReportStatus(report):
             if status == 'IG':
                 status = 'OK'
     count['status']=status
-    count['author']=firstver.author
+    count['author']=getUserName(firstver.author)
     return count
 
 def getAuthors(subproject):

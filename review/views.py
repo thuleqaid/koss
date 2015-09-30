@@ -46,6 +46,7 @@ def importchkitm(request, projectcode):
     else:
         navbar = []
         prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
         navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
         navbar.append({'link':'#', 'title':'Import CheckItem', 'param':['',]})
         return render(request, 'review/importchkitm.html', {'projectcode':projectcode, 'navbar':navbar})
@@ -143,6 +144,7 @@ def managechkgrp(request, projectcode):
                     data[-1]['groups'].append(False)
         navbar = []
         prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
         navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
         navbar.append({'link':'#', 'title':'Manage CheckGroup', 'param':['',]})
         return render(request, 'review/managechkgrp.html', {'projectcode':projectcode, 'groups':groups, 'data':data, 'groupinfo':json.dumps(groups), 'initial':json.dumps(data), 'navbar':navbar})
@@ -250,6 +252,7 @@ def managechklst(request, projectcode):
                     data[-1]['lists'].append(False)
         navbar = []
         prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
         navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
         navbar.append({'link':'#', 'title':'Manage CheckList', 'param':['',]})
         return render(request, 'review/managechklst.html', {'projectcode':projectcode, 'lists':lists, 'data':data, 'listinfo':json.dumps(lists), 'initial':json.dumps(data), 'navbar':navbar})
@@ -394,6 +397,15 @@ def projectedit(request, projectcode):
                     prj.author = request.user
                     prj.setCode(Project.DefaultCategory, codeno)
                     prj.save()
+                    # create an empty checkgroup and checklist
+                    grpobj = CheckGroup(project = prj.code, title = "AnonymousGroup")
+                    grpobj.author = request.user
+                    grpobj.setCode('GRP', CheckGroup.nextCode('GRP'))
+                    grpobj.save()
+                    lstobj = CheckList(project = prj.code, title = "AnonymousList", selfcheck = True)
+                    lstobj.author = request.user
+                    lstobj.setCode('LST', CheckList.nextCode('LST'))
+                    lstobj.save()
             return HttpResponseRedirect(reverse('review:projectview', args=(prj.code,)))
         return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':json.dumps(initial),'navbar':navbar})
     else:
@@ -427,10 +439,16 @@ def projectview(request, projectcode):
             data.append({'title':chk.title, 'id':chk.id, 'code':chk.code, 'version':chk.version, 'selfcheck':chk.selfcheck,
                 'groups':[{'title':grpmap[x.code], 'id':x.id, 'code':x.code, 'version':x.version} for x in groups]})
         subps = SubProject.latest('WHERE project="%s"' % (prj.code,))
-        #prjinfo = getProjectInfo(prj)
-        #for subp in subps:
-            #for chklst in sorted(prjinfo.keys()):
-                #pass
+        prjinfo = getProjectInfo(prj)
+        subps_filter = []
+        for subp in subps:
+            details = ''
+            for chklst in sorted(prjinfo.keys()):
+                details += '* **Locked**:{:>02} **Ok**:{:>02} **Ng**:{:>02} `{}` \n'.format(prjinfo[chklst]['subproject'][subp.code]['c_locked'],
+                    prjinfo[chklst]['subproject'][subp.code]['c_ok'],
+                    prjinfo[chklst]['subproject'][subp.code]['c_ng'],
+                    prjinfo[chklst]['checklist'].title)
+            subps_filter.append({'code':subp.code, 'title':subp.title, 'details':details})
         permlevel = permissionCheck(request, 0, projectcode)
         permdict = {}
         if prj.status == Project.StatusInit:
@@ -450,7 +468,7 @@ def projectview(request, projectcode):
             permdict['manage'] = False
         navbar = []
         navbar.append({'link':'#', 'title':prj.title, 'param':['',projectcode]})
-        return render(request, 'review/project.html', {'project':prj, 'checklists':data, 'subprojects':subps, 'permission':permdict, 'navbar':navbar})
+        return render(request, 'review/project.html', {'project':prj, 'checklists':data, 'subprojects':subps_filter, 'permission':permdict, 'navbar':navbar})
     else:
         raise Http404("Project does not exist")
 
@@ -471,11 +489,12 @@ def subproject(request, projectcode, subprojectcode):
             if chk.selfcheck:
                 sccount += len(data[-1]['reports'])
         projectobj = getProject(subp.project)
-        permlevel = permissionCheck(request, 0, projectobj)
+        permlevel = permissionCheck(request, 2, projectobj)
+        permdict = {'projectuser':permlevel>2}
         navbar = []
         navbar.append({'link':reverse('review:projectview', args=(subp.project,)), 'title':projectobj.title, 'param':['review:projectview', subp.project]})
         navbar.append({'link':'#', 'title':subp.title, 'param':['',]})
-        return render(request, 'review/subproject.html', {'subproject':subp, 'checklists':data, 'selfcheck':(sccount>0), 'permission':permlevel, 'navbar':navbar})
+        return render(request, 'review/subproject.html', {'subproject':subp, 'checklists':data, 'selfcheck':(sccount>0), 'permission':permdict, 'navbar':navbar})
     else:
         raise Http404("Project does not exist")
 
@@ -506,6 +525,7 @@ def addsubprj(request, projectcode):
     else:
         navbar = []
         prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
         navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
         navbar.append({'link':'#', 'title':'Add SubProject', 'param':['',]})
         return render(request, 'review/addsubprj.html', {'projectcode':projectcode, 'navbar':navbar})
@@ -636,7 +656,7 @@ def selfchecknew(request, projectcode, subprojectcode, checklistcode):
             chklist.save()
             return HttpResponseRedirect(reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)))
         else:
-            return render(request, 'review/newselfcheck.html', {'form':form,'initvalue':request.POST['initvalue'],'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo']})
+            return render(request, 'review/newselfcheck.html', {'form':form,'initvalue':request.POST['initvalue'],'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'],'permission':json.loads(request.POST['permissioninfo']),'permissioninfo':request.POST['permissioninfo']})
     else:
         # 初次进入，设置初期值
         chklist = list(CheckList.latest('WHERE code="%s"'%(checklistcode,)))
@@ -663,9 +683,9 @@ def selfchecknew(request, projectcode, subprojectcode, checklistcode):
             navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview', form['project']['code']]})
             navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
             navbar.append({'link':'#', 'title':'New {}'.format(chk.title), 'param':['',]})
-            permlevel = permissionCheck(request, 0, prjobj)
+            permlevel = permissionCheck(request, 2, prjobj)
             permdict = {'save': (permlevel > 2) and (prjobj.status == 'OP') }
-            return render(request, 'review/newselfcheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'permission':permdict})
+            return render(request, 'review/newselfcheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'permission':permdict, 'permissioninfo':json.dumps(permdict)})
         else:
             raise Http404("CheckList does not exist")
 
@@ -760,7 +780,9 @@ def selfcheckedit(request, projectcode, reportid):
         else:
             return HttpResponseRedirect(reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)))
     else:
-        permlevel = permissionCheck(request, 2, projectcode)
+        prjobj = getProject(projectcode)
+        permlevel = permissionCheck(request, 2, prjobj)
+        permdict = {'save': (permlevel > 2) and (prjobj.status == 'OP') }
         # 初次进入，设置初期值
         chk = get_object_or_404(CheckListResult, pk=reportid)
         chklist = list(CheckList.latest('WHERE code="%s"'%(chk.listcode,)))
@@ -769,7 +791,6 @@ def selfcheckedit(request, projectcode, reportid):
             form['subproject'] = {'code':chk.subproject}
             form['report'] = {'id':reportid}
             form['checklist'] = {'code':chk.listcode,'version':chk.listversion, 'title':chk.title, 'lock':chk.lockstatus}
-            prjobj = getProject(projectcode)
             prjsetting = getProjectSetting(prjobj, chklist[0])
             choices_org = prjsetting['choice']
             choices = [(x.value, x.text) for idx,x in enumerate(choices_org) if x.valid]
@@ -789,7 +810,7 @@ def selfcheckedit(request, projectcode, reportid):
             navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview',form['project']['code']]})
             navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
             navbar.append({'link':'#', 'title':chk.title})
-            return render(request, 'review/editselfcheck.html', {'form':form,'initvalue':json.dumps(form),'permission':permlevel, 'navbar':navbar})
+            return render(request, 'review/editselfcheck.html', {'form':form,'initvalue':json.dumps(form),'permission':permdict, 'navbar':navbar})
 
 @login_required
 def peerchecknew(request, projectcode, subprojectcode, checklistcode):
@@ -919,7 +940,7 @@ def peerchecknew(request, projectcode, subprojectcode, checklistcode):
             chklist.save()
             return HttpResponseRedirect(reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)))
         else:
-            return render(request, 'review/newpeercheck.html', {'form':form,'initvalue':request.POST['initvalue'],'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo']})
+            return render(request, 'review/newpeercheck.html', {'form':form,'initvalue':request.POST['initvalue'],'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'permission':json.loads(request.POST['permissioninfo']), 'permissioninfo':request.POST['permissioninfo']})
     else:
         # 初次进入，设置初期值
         chklist = list(CheckList.latest('WHERE code="%s"'%(checklistcode,)))
@@ -929,6 +950,8 @@ def peerchecknew(request, projectcode, subprojectcode, checklistcode):
             form['subproject'] = {'code':subprojectcode}
             form['checklist'] = {'code':chk.code,'version':chk.version, 'title':chk.title}
             prjobj = getProject(projectcode)
+            permlevel = permissionCheck(request, 2, prjobj)
+            permdict = {'save': (permlevel > 2) and (prjobj.status == 'OP') }
             prjsetting = getProjectSetting(prjobj, chk)
             choices_org = prjsetting['choice']
             choices = [(x.value, x.text) for idx,x in enumerate(choices_org) if x.valid]
@@ -953,7 +976,7 @@ def peerchecknew(request, projectcode, subprojectcode, checklistcode):
             navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview',form['project']['code']]})
             navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
             navbar.append({'link':'#', 'title':'New {}'.format(chk.title), 'param':['',]})
-            return render(request, 'review/newpeercheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar,'navbarinfo':json.dumps(navbar)})
+            return render(request, 'review/newpeercheck.html', {'form':form,'initvalue':json.dumps(form),'navbar':navbar,'navbarinfo':json.dumps(navbar),'permission':permdict,'permissioninfo':json.dumps(permdict)})
         else:
             raise Http404("CheckList does not exist")
 
@@ -1123,7 +1146,9 @@ def peercheckedit(request, projectcode, reportid):
         else:
             return HttpResponseRedirect(reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)))
     else:
-        permlevel = permissionCheck(request, 2, projectcode)
+        prjobj = getProject(projectcode)
+        permlevel = permissionCheck(request, 2, prjobj)
+        permdict = {'save': (permlevel > 2) and (prjobj.status == 'OP') }
         # 初次进入，设置初期值
         chk = get_object_or_404(CheckListResult, pk=reportid)
         chklist = list(CheckList.latest('WHERE code="%s"'%(chk.listcode,)))
@@ -1137,7 +1162,6 @@ def peercheckedit(request, projectcode, reportid):
                 form['report']['actor'] = True
             else:
                 form['report']['actor'] = False
-            prjobj = getProject(projectcode)
             prjsetting = getProjectSetting(prjobj, chklist[0])
             choices_org = prjsetting['choice']
             choices = [(x.value, x.text) for idx,x in enumerate(choices_org) if x.valid]
@@ -1171,7 +1195,7 @@ def peercheckedit(request, projectcode, reportid):
             navbar.append({'link':reverse('review:projectview', args=(form['project']['code'],)), 'title':prjobj.title, 'param':['review:projectview',form['project']['code']]})
             navbar.append({'link':reverse('review:subproject', args=(form['project']['code'],form['subproject']['code'],)), 'title':subpobj[0].title, 'param':['review:subproject',form['project']['code'],form['subproject']['code']]})
             navbar.append({'link':'#', 'title':chk.title, 'param':['',]})
-            return render(request, 'review/editpeercheck.html', {'form':form,'initvalue':json.dumps(form),'permission':permlevel, 'navbar':navbar})
+            return render(request, 'review/editpeercheck.html', {'form':form,'initvalue':json.dumps(form),'permission':permdict, 'navbar':navbar})
 
 @login_required
 def lockcheck(request, projectcode, reportcode):
@@ -1242,6 +1266,7 @@ def importusr(request):
 def dashusr(request, projectcode):
     actions = getNextAction(request, projectcode)
     prj = getProject(projectcode)
+    permlevel = permissionCheck(request, 3, prj)
     navbar = []
     navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
     navbar.append({'link':'#', 'title':'Dashboard', 'param':['',]})
@@ -1250,6 +1275,7 @@ def dashusr(request, projectcode):
 @login_required
 def projectdash(request, projectcode):
     prj = getProject(projectcode)
+    permlevel = permissionCheck(request, 2, prj)
     prjinfo = getProjectInfo(prj)
     datakeys = ('c_locked', 'c_ok', 'c_ng')
     chartinfo = { 'checklist':[] }

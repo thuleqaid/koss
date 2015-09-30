@@ -1,37 +1,41 @@
 ## Flow
 Index Page
-1	ProjectEdit Page(SuperAdministrator)
-1	ImportUser Page(SuperAdministrator)
-1	ProjectView Page(SystemUser)
-1		ProjectEdit Page(ProjectAdministrator)
-1		ManageUser Page(ProjectAdministrator)
-		ImportCheckItem Page(ProjectAdministrator)
-		ManageCheckGroup Page(ProjectAdministrator)
-		ManageCheckList Page(ProjectAdministrator)
-		AddSubProject Page(ProjectAdministrator)
-		ProjectDashboard Page(SystemUser)
-		UserDashboard Page(ProjectUser)
-		SubProject Page(SystemUser)
-			NewSelfCheck Page(SystemUser for view, ProjectUser for update)
-			EditSelfCheck Page(SystemUser for view, ProjectUser for update)
-			NewPeerCheck Page(SystemUser for view, ProjectUser for update)
-			EditPeerCheck Page(SystemUser for view, ProjectUser for update)
-			SwitchReport Link(ProjectUser)
+[x]	ProjectEdit Page(SuperAdministrator)
+[x]	ImportUser Page(SuperAdministrator)
+[x]	ProjectView Page(SystemUser)
+[x]		ProjectEdit Page(ProjectAdministrator)
+[x]		ManageUser Page(ProjectAdministrator)
+[x]		ImportCheckItem Page(ProjectAdministrator)
+[x]		ManageCheckGroup Page(ProjectAdministrator)
+[x]			ModifyCheckItem Page(ProjectAdministrator)
+[x]			ModifyCheckGroup Page(ProjectAdministrator)
+[x]		ManageCheckList Page(ProjectAdministrator)
+[x]			ModifyCheckList Page(ProjectAdministrator)
+[x]		AddSubProject Page(ProjectAdministrator)
+[x]		ModifySubProject Page(ProjectAdministrator)
+[x]		ProjectDashboard Page(SystemUser)
+[x]		UserDashboard Page(ProjectUser)
+[x]		SubProject Page(SystemUser)
+[x]			NewSelfCheck Page(SystemUser for view, ProjectUser for update)
+[x]			EditSelfCheck Page(SystemUser for view, ProjectUser for update)
+[x]			NewPeerCheck Page(SystemUser for view, ProjectUser for update)
+[x]			EditPeerCheck Page(SystemUser for view, ProjectUser for update)
+[x]			SwitchReport Link(ProjectUser)
 
 ## ToDo List
-* 项目的指摘状态以及指摘等级的设置功能
-* 项目的初始状态改为配置中（这个状态下可以删除指摘状态以及指摘等级，一般情况只能增加和修改）
-* 检查项目、分组名、Checklist名的修改功能
-* 变更履历的表示功能
-	* 检查项目
-	* 检查分组
-	* Checklist
-	* Report
-	* 指摘
-* 子项目增加规模（成果量）设置功能（用于统计指摘率）
-* Report增加副标题以及Review形式、Review时间、成果物版本、参与人员设置功能
-* Dashboard页面增加分组功能（用于对子项目进行分组统计）
-* Dashboard页面增加进度曲线图（x轴：日期，y轴：进度）
-* Dashboard页面指摘分类饼图
-* 情报共享平台
+* [ ] 项目的指摘状态以及指摘等级的设置功能
+* [x] 项目的初始状态改为配置中（这个状态下可以删除指摘状态以及指摘等级，一般情况只能增加和修改）
+* [x] 检查项目、分组名、Checklist名的修改功能
+* [ ] 变更履历的表示功能
+	* [x] 检查项目
+	* [x] 检查分组
+	* [x] Checklist
+	* [ ] Report
+	* [ ] 指摘
+* [ ] 子项目增加规模（成果量）设置功能（用于统计指摘率）
+* [ ] Report增加副标题以及Review形式、Review时间、成果物版本、参与人员设置功能
+* [ ] Dashboard页面增加分组功能（用于对子项目进行分组统计）
+* [ ] Dashboard页面增加进度曲线图（x轴：日期，y轴：进度）
+* [ ] Dashboard页面指摘分类饼图
+* [ ] 情报共享平台
 
