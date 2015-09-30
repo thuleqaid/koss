@@ -1,7 +1,7 @@
 {% extends 'review/base_js.html' %}
 
 {% block title %}
-Modify CheckItem
+Modify SubProject
 {% endblock %}
 
 {% block body %}
@@ -14,7 +14,7 @@ Modify CheckItem
 		</ul>
 		<div class="tab-content">
 			<div class="tab-pane active" id="tabmod">
-				<form class="form" action="{% url 'review:modifycheckitem' projectcode itemcode %}" method="POST">
+				<form class="form" action="{% url 'review:modifysubproject' projectcode subprojectcode %}" method="POST">
 					{% csrf_token %}
 					<div class="form-group">
 						<label for="id_title" class="control-label">Title</label>

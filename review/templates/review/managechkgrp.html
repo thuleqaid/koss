@@ -13,7 +13,7 @@
 				<tr>
 					<td>Item</td>
 					{% for grp in groups %}
-						<td>{{ grp.title }}</td>
+						<td><a href="{% url 'review:modifycheckgroup' projectcode grp.code %}">{{ grp.title }}</a></td>
 					{% endfor %}
 				</tr>
 			</thead>

@@ -56,7 +56,12 @@
 		<tbody>
 		{% for subp in subprojects %}
 			<tr>
-				<td><a href="{% url 'review:subproject' project.code subp.code %}">{{ subp.title }}</a></td>
+				<td>
+					<a href="{% url 'review:subproject' project.code subp.code %}">{{ subp.title }}</a>
+					{% if permission.manage %}
+						<a href="{% url 'review:modifysubproject' project.code subp.code %}"><abbr title="Edit Project"><span class="glyphicon glyphicon-pencil"></span></abbr></a>
+					{% endif %}
+				</td>
 				<td>
 					{{ subp.details }}
 				</td>

@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 import json
+import datetime
 from django.contrib.auth.models import User, Group
 from django.http import Http404
 from .models import *
@@ -304,3 +305,40 @@ def getUserName(user):
     else:
         retname = ''
     return retname
+
+def verupCheckItem(user, projectcode, chkitem):
+    grplist = list(CheckGroup.latest('WHERE project="%s"'%(projectcode,)))
+    for grp in grplist:
+        details = grp.unpackDetails(grp.details)
+        for idx,detail in enumerate(details):
+            if detail.code == chkitem.code:
+                details[idx] = CheckGroup.GroupDetailItem(valid=True, code=chkitem.code, version=chkitem.version, id=chkitem.id)
+                break
+        else:
+            continue
+        grp.details = json.dumps(details)
+        grp.id = None
+        grp.version += 1
+        grp.author = user
+        grp.save()
+        verupCheckGroup(user, projectcode, grp)
+
+def verupCheckGroup(user, projectcode, chkgrp):
+    chklist = list(CheckList.latest('WHERE project="%s"'%(projectcode,)))
+    for chk in chklist:
+        groups = [CheckList.GroupItem(*x) for x in json.loads(chk.groups)]
+        for idx,group in enumerate(groups):
+            if group.code == chkgrp.code:
+                groups[idx] = CheckList.GroupItem(valid=True, code=chkgrp.code, version=chkgrp.version, id=chkgrp.id)
+                break
+        else:
+            continue
+        chk.groups = json.dumps(groups)
+        chk.id = None
+        chk.version += 1
+        chk.author = user
+        chk.save()
+
+def localTime(dt, offset=8):
+    newdt = dt + datetime.timedelta(hours=offset)
+    return newdt.strftime("%Y/%m/%d %H:%M:%S")

@@ -70,21 +70,7 @@ def modifychkitm(request, projectcode, itemcode):
                 chkitem.version += 1
                 chkitem.author = request.user
                 chkitem.save()
-                grplist = list(CheckGroup.latest('WHERE project="%s"'%(projectcode,)))
-                chklist = list(CheckList.latest('WHERE project="%s"'%(projectcode,)))
-                for grp in grplist:
-                    details = grp.unpackDetails(grp.details)
-                    for idx,detail in enumerate(details):
-                        if detail.code == chkitem.code:
-                            details[idx] = CheckGroup.GroupDetailItem(valid=True, code=chkitem.code, version=chkitem.version, id=chkitem.id)
-                            break
-                    else:
-                        continue
-                    grp.details = json.dumps(details)
-                    grp.id = None
-                    grp.version += 1
-                    grp.author = request.user
-                    grp.save()
+                verupCheckItem(request.user, projectcode, chkitem)
             else:
                 # form unchanged
                 pass
@@ -95,7 +81,7 @@ def modifychkitm(request, projectcode, itemcode):
         permlevel = permissionCheck(request, 4, prj)
         items = []
         for item in list(CheckItem.objects.filter(code=itemcode).filter(project=projectcode).order_by('version')):
-            items.append({'title':item.title, 'details':item.details, 'version':item.version, 'author':getUserName(item.author), 'id':item.id})
+            items.append({'title':item.title, 'details':item.details, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time)})
         form  = {}
         if len(items) > 0:
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
@@ -106,6 +92,7 @@ def modifychkitm(request, projectcode, itemcode):
             return render(request, 'review/modifychkitm.html', {'projectcode':projectcode, 'itemcode':itemcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
         else:
             raise Http404('No Checkitem.')
+
 @login_required
 def managechkgrp(request, projectcode):
     if request.method == 'POST':
@@ -159,6 +146,46 @@ def managechkgrp(request, projectcode):
         navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
         navbar.append({'link':'#', 'title':'Manage CheckGroup', 'param':['',]})
         return render(request, 'review/managechkgrp.html', {'projectcode':projectcode, 'groups':groups, 'data':data, 'groupinfo':json.dumps(groups), 'initial':json.dumps(data), 'navbar':navbar})
+
+@login_required
+def modifychkgrp(request, projectcode, groupcode):
+    if request.method == 'POST':
+        items = json.loads(request.POST['initial'])
+        form = {}
+        form['title'] = request.POST.get('title','').strip()
+        if form['title'] == '':
+            form['title_error'] = 'Empty Title'
+            return render(request, 'review/modifychkgrp.html', {'projectcode':projectcode, 'groupcode':groupcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
+        else:
+            if form['title'] != items[-1]['title']:
+                # form changed
+                chkgroup = CheckGroup.objects.get(pk = items[-1]['id'])
+                chkgroup.id = None
+                chkgroup.title = form['title']
+                chkgroup.version += 1
+                chkgroup.author = request.user
+                chkgroup.save()
+                verupCheckGroup(request.user, projectcode, chkgroup)
+            else:
+                # form unchanged
+                pass
+            return HttpResponseRedirect(reverse('review:managecheckgroup', args=(projectcode,)))
+    else:
+        navbar = []
+        prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
+        items = []
+        for group in list(CheckGroup.objects.filter(code=groupcode).filter(project=projectcode).order_by('version')):
+            items.append({'title':group.title, 'version':group.version, 'author':getUserName(group.author), 'id':group.id, 'update_time':localTime(group.update_time), 'details':[CheckGroup.GroupDetailItem(*x)._asdict() for x in json.loads(group.details)]})
+        form  = {}
+        if len(items) > 0:
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':reverse('review:managecheckgroup', args=(projectcode,)), 'title':'Manage CheckGroup', 'param':['review:managecheckgroup', projectcode]})
+            navbar.append({'link':'#', 'title':'Modify CheckGroup', 'param':['',]})
+            form['title'] = items[-1]['title']
+            return render(request, 'review/modifychkgrp.html', {'projectcode':projectcode, 'groupcode':groupcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
+        else:
+            raise Http404('No Checkgroup.')
 
 @login_required
 def addchkgrp(request, projectcode):
@@ -242,6 +269,51 @@ def addchklst(request, projectcode):
             lstobj.setCode('LST', CheckList.nextCode('LST'))
             lstobj.save()
         return HttpResponseRedirect(reverse('review:managechecklist', args=(projectcode,)))
+
+@login_required
+def modifychklst(request, projectcode, listcode):
+    if request.method == 'POST':
+        items = json.loads(request.POST['initial'])
+        form = {}
+        form['title'] = request.POST.get('title','').strip()
+        if request.POST.get('selfcheck','').strip() == '':
+            form['selfcheck'] = False
+        else:
+            form['selfcheck'] = True
+        if form['title'] == '':
+            form['title_error'] = 'Empty Title'
+            return render(request, 'review/modifychklst.html', {'projectcode':projectcode, 'listcode':listcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
+        else:
+            if form['title'] != items[-1]['title'] or form['selfcheck'] != items[-1]['selfcheck']:
+                # form changed
+                chklist = CheckList.objects.get(pk = items[-1]['id'])
+                chklist.id = None
+                chklist.title = form['title']
+                chklist.version += 1
+                chklist.author = request.user
+                chklist.selfcheck = form['selfcheck']
+                chklist.save()
+            else:
+                # form unchanged
+                pass
+            return HttpResponseRedirect(reverse('review:managecheckgroup', args=(projectcode,)))
+    else:
+        navbar = []
+        prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
+        items = []
+        for item in list(CheckList.objects.filter(code=listcode).filter(project=projectcode).order_by('version')):
+            items.append({'title':item.title, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time), 'details':[CheckList.GroupItem(*x)._asdict() for x in json.loads(item.groups)], 'selfcheck':item.selfcheck})
+        form  = {}
+        if len(items) > 0:
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':reverse('review:managechecklist', args=(projectcode,)), 'title':'Manage CheckList', 'param':['review:managechecklist', projectcode]})
+            navbar.append({'link':'#', 'title':'Modify CheckList', 'param':['',]})
+            form['title'] = items[-1]['title']
+            form['selfcheck'] = items[-1]['selfcheck']
+            return render(request, 'review/modifychklst.html', {'projectcode':projectcode, 'listcode':listcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
+        else:
+            raise Http404('No Checklist.')
 
 @login_required
 def manageusr(request, projectcode):
@@ -355,6 +427,10 @@ def projectview(request, projectcode):
             data.append({'title':chk.title, 'id':chk.id, 'code':chk.code, 'version':chk.version, 'selfcheck':chk.selfcheck,
                 'groups':[{'title':grpmap[x.code], 'id':x.id, 'code':x.code, 'version':x.version} for x in groups]})
         subps = SubProject.latest('WHERE project="%s"' % (prj.code,))
+        #prjinfo = getProjectInfo(prj)
+        #for subp in subps:
+            #for chklst in sorted(prjinfo.keys()):
+                #pass
         permlevel = permissionCheck(request, 0, projectcode)
         permdict = {}
         if prj.status == Project.StatusInit:
@@ -433,6 +509,47 @@ def addsubprj(request, projectcode):
         navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
         navbar.append({'link':'#', 'title':'Add SubProject', 'param':['',]})
         return render(request, 'review/addsubprj.html', {'projectcode':projectcode, 'navbar':navbar})
+
+@login_required
+def modifysubprj(request, projectcode, subprojectcode):
+    if request.method == 'POST':
+        items = json.loads(request.POST['initial'])
+        form = {}
+        form['title'] = request.POST.get('title','').strip()
+        form['details'] = request.POST.get('details','').strip()
+        if form['title'] == '':
+            form['title_error'] = 'Empty Title'
+            return render(request, 'review/modifysubprj.html', {'projectcode':projectcode, 'subprojectcode':subprojectcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
+        else:
+            if form['title'] != items[-1]['title'] or form['details'] != items[-1]['details']:
+                # form changed
+                subprj = SubProject.objects.get(pk = items[-1]['id'])
+                subprj.id = None
+                subprj.title = form['title']
+                subprj.details = form['details']
+                subprj.version += 1
+                subprj.author = request.user
+                subprj.save()
+            else:
+                # form unchanged
+                pass
+            return HttpResponseRedirect(reverse('review:projectview', args=(projectcode,)))
+    else:
+        navbar = []
+        prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 4, prj)
+        items = []
+        for item in list(SubProject.objects.filter(code=subprojectcode).filter(project=projectcode).order_by('version')):
+            items.append({'title':item.title, 'details':item.details, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time)})
+        form  = {}
+        if len(items) > 0:
+            navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+            navbar.append({'link':'#', 'title':'Modify SubProject', 'param':['',]})
+            form['title'] = items[-1]['title']
+            form['details'] = items[-1]['details']
+            return render(request, 'review/modifysubprj.html', {'projectcode':projectcode, 'subprojectcode':subprojectcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
+        else:
+            raise Http404('No Subproject.')
 
 @login_required
 def selfchecknew(request, projectcode, subprojectcode, checklistcode):

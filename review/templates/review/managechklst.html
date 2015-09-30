@@ -11,13 +11,13 @@
 			<thead>
 				<td>Group</td>
 				{% for lst in lists %}
-					<td>{{ lst.title }}</td>
+					<td><a href="{% url 'review:modifychecklist' projectcode lst.code %}">{{ lst.title }}</a></td>
 				{% endfor %}
 			</thead>
 			<tbody>
 				{% for row in data %}
 					<tr>
-						<td>{{ row.group.title }}</td>
+						<td>{{ row.group.code }}. {{ row.group.title }}</td>
 						{% for lst in row.lists %}
 							<td>
 								<div class="switch">

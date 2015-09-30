@@ -1,7 +1,7 @@
 {% extends 'review/base_js.html' %}
 
 {% block title %}
-Modify CheckItem
+Modify CheckList
 {% endblock %}
 
 {% block body %}
@@ -14,7 +14,7 @@ Modify CheckItem
 		</ul>
 		<div class="tab-content">
 			<div class="tab-pane active" id="tabmod">
-				<form class="form" action="{% url 'review:modifycheckitem' projectcode itemcode %}" method="POST">
+				<form class="form" action="{% url 'review:modifychecklist' projectcode listcode %}" method="POST">
 					{% csrf_token %}
 					<div class="form-group">
 						<label for="id_title" class="control-label">Title</label>
@@ -25,9 +25,13 @@ Modify CheckItem
 							</span>
 						{% endif %}
 					</div>
-					<div class="form-group">
-						<label for="id_details" class="control-label">Details</label>
-						<textarea class="form-control" name="details" id="id_details" rows="9">{{ form.details }}</textarea>
+					<div class="switch">
+						{% if form.selfcheck %}
+							<input type="checkbox" id="id_selfcheck" name="selfcheck" checked />
+						{% else %}
+							<input type="checkbox" id="id_selfcheck" name="selfcheck" />
+						{% endif %}
+						<label for="id_selfcheck">SelfCheck</label>
 					</div>
 					<button type="submit" class="btn btn-primary">Modify</button>
 					<input type="hidden" name="navbarinfo" value="{{ navbarinfo }}" />
@@ -48,10 +52,30 @@ Modify CheckItem
 							<label for="id_title_{{ forloop.counter }}" class="control-label">Title</label>
 							<input class="form-control" id="id_title_{{ forloop.counter }}" name="title_{{ forloop.counter }}" type="text" value="{{ item.title }}" readonly />
 						</div>
-						<div class="form-group">
-							<label for="id_details_{{ forloop.counter }}" class="control-label">Details</label>
-							<div class="markdown" name="details_{{ forloop.counter }}" id="id_details_{{ forloop.counter }}">{{ item.details }}</div>
+						<div class="switch">
+							{% if form.selfcheck %}
+								<input type="checkbox" id="id_selfcheck" name="selfcheck" checked disabled />
+							{% else %}
+								<input type="checkbox" id="id_selfcheck" name="selfcheck" disabled />
+							{% endif %}
+							<label for="id_selfcheck">SelfCheck</label>
 						</div>
+						<table class="table table-hover table-striped">
+							<thead>
+								<tr>
+									<th>CheckGroup</th>
+									<th>Version</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for detail in item.details %}
+								<tr>
+									<td>{{ detail.code }}</td>
+									<td>{{ detail.version }}</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
 					</div>
 				</div>
 				{% endfor %}
@@ -59,13 +83,4 @@ Modify CheckItem
 		</div>
 	</div>
 </div>
-<script type="text/javascript">
-	$(document).ready(function() {
-		var converter = new showdown.Converter();
-		var tds = $(".markdown");
-		for (var i = 0; i < tds.length; i++) {
-			tds[i].innerHTML = converter.makeHtml(tds[i].innerHTML);
-		}
-	});
-</script>
 {% endblock %}
