@@ -10,6 +10,7 @@
 		<div class="form-group">
 			<label for="excel_tab" class="control-label">SubProjects</label>
 			<textarea class="form-control" name="excel_tab" id="excel_tab" rows="9"></textarea>
+			<div id="editor"></div>
 			<span class="help-block">
 				<strong>Excel Format</strong>
 				<table class="table">
@@ -29,4 +30,16 @@
 		<button type="submit" class="btn btn-primary">Preview</button>
 	</form>
 </div>
+<script>
+	var editor = ace.edit("editor");
+	var textarea = $('#excel_tab').hide();
+	editor.setTheme("ace/theme/twilight");
+	editor.getSession().setMode("ace/mode/text");
+	editor.getSession().setTabSize(4);
+	editor.getSession().setUseSoftTabs(false);
+	editor.setAutoScrollEditorIntoView(true);
+	editor.setOption("maxLines", 20);
+	editor.setOption("minLines", 20);
+	editor.getSession().on('change', function() { textarea.val(editor.getSession().getValue()); });
+</script>
 {% endblock %}

@@ -22,12 +22,16 @@ def index(request):
 @login_required
 def importchkitm(request, projectcode):
     if request.method == 'POST':
+        rowlength = 3
         if 'excel_tab' in request.POST:
             data=request.POST['excel_tab'].splitlines()
             cread = CSVReader(data)
             outlist = []
             for row in cread:
-                outlist.append([x.strip() for idx, x in enumerate(row) if idx < 3])
+                outlist.append([x.strip() for idx, x in enumerate(row) if idx < rowlength])
+            for row in outlist:
+                row[0]=row[0].replace(' ', '_')
+                row.extends([''] * (rowlength - len(row)))
             navbar = []
             prj = getProject(projectcode)
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
@@ -37,7 +41,7 @@ def importchkitm(request, projectcode):
         elif 'initial' in request.POST:
             data = json.loads(request.POST['initial'])
             for row in data:
-                if len(row) > 2:
+                if len(row) >= rowlength:
                     item = CheckItem(project=projectcode, title=row[1], details=row[2])
                     item.author = request.user
                     item.setCode(row[0],CheckItem.nextCode(row[0]))
