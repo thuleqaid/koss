@@ -375,13 +375,27 @@ def projectedit(request, projectcode):
     if request.method == 'POST':
         form = json.loads(request.POST['initial'])
         form['title'] = request.POST.get('title','').strip()
+        form['txtig'] = request.POST.get('txtig','').strip()
+        form['txtok'] = request.POST.get('txtok','').strip()
+        form['txtng'] = request.POST.get('txtng','').strip()
         form['status'] = request.POST['status']
+        flag_valid = True
         if form['title'] == '':
             form['title_error'] = 'Empty Project Name'
-            return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':request.POST['initial'],'navbar':json.loads(request.POST['navbarinfo']),'navbarinfo':request.POST['navbarinfo']})
-        else:
+            flag_valid = False
+        elif form['txtig'] == '':
+            form['txtig_error'] = 'Empty Ignore Text'
+            flag_valid = False
+        elif form['txtok'] == '':
+            form['txtok_error'] = 'Empty OK Text'
+            flag_valid = False
+        elif form['txtng'] == '':
+            form['txtng_error'] = 'Empty NG Text'
+            flag_valid = False
+        if flag_valid:
             initial = json.loads(request.POST['initial'])
-            if form['title'] != initial['title'] or form['status'] != initial['status']:
+            if form['title'] != initial['title'] or form['status'] != initial['status'] or form['txtok'] != initial['txtok'] or form['txtig'] != initial['txtig'] or form['txtng'] != initial['txtng']:
+                choices = [Project.ChoiceItem(True, 'IG', form['txtig']),Project.ChoiceItem(True, 'OK', form['txtok']),Project.ChoiceItem(True, 'NG', form['txtng'])]
                 if form['code']:
                     prjs = list(Project.objects.filter(code=form['code']).filter(version__gte=form['version']))
                     if len(prjs) > 1:
@@ -393,6 +407,7 @@ def projectedit(request, projectcode):
                         prj.title = form['title']
                         prj.status = form['status']
                         prj.author = request.user
+                        prj.choices = json.dumps(choices)
                         prj.id = None
                         prj.save()
                 else:
@@ -400,6 +415,7 @@ def projectedit(request, projectcode):
                     prj = Project(title=form['title'], status=form['status'])
                     prj.author = request.user
                     prj.setCode(Project.DefaultCategory, codeno)
+                    prj.choices = json.dumps(choices)
                     prj.save()
                     # create an empty checkgroup and checklist
                     grpobj = CheckGroup(project = prj.code, title = "AnonymousGroup")
@@ -411,19 +427,53 @@ def projectedit(request, projectcode):
                     lstobj.setCode('LST', CheckList.nextCode('LST'))
                     lstobj.save()
             return HttpResponseRedirect(reverse('review:projectview', args=(prj.code,)))
-        return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':json.dumps(initial),'navbar':navbar})
+        else:
+            return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':form,'initial':request.POST['initial'],'navbar':json.loads(request.POST['navbarinfo']),'navbarinfo':request.POST['navbarinfo']})
     else:
         navbar = []
         if projectcode == '0':
             # add new project
             permlevel = permissionCheck(request, 9)
             initial = {'title':'', 'status':Project.StatusChoice[0][0], 'choices':Project.StatusChoice, 'code':'', 'version':0, 'title_error':'', 'version_error':'', 'disable':False}
+            initial['txtig_error'] = ''
+            initial['txtok_error'] = ''
+            initial['txtng_error'] = ''
+            initial['txtig'] = '関係なし'
+            initial['txtok'] = 'OK'
+            initial['txtng'] = '問題あり'
+            initial['bugstsa'] = [['A1','修正中']]
+            initial['bugstsc'] = [['C1', '確認待ち']]
+            initial['bugstsd'] = [['D1', '完成'], ['D2', '変更不要'], ['D3', '転記']]
+            initial['bugcategory'] = [['A1', '機能不具合'], ['E1', '成果物不具合']]
         else:
             # modify project
             permlevel = permissionCheck(request, 4, projectcode)
             prjlist = list(Project.latest('WHERE code="%s"'%(projectcode,)))
             prj = prjlist[0]
             initial = {'title':prj.title, 'status':prj.status, 'choices':Project.StatusChoice, 'code':prj.code, 'version':prj.version, 'title_error':'', 'version_error':'', 'disable':prj.status != Project.StatusChoice[0][0]}
+            choices = [Project.ChoiceItem(*x) for x in json.loads(prj.choices)]
+            bugstatus = [Project.BugStatus(*x) for x in json.loads(prj.bugstatus)]
+            bugcategory = [Project.BugCategory(*x) for x in json.loads(prj.bugcategory)]
+            initial['txtig_error'] = ''
+            initial['txtok_error'] = ''
+            initial['txtng_error'] = ''
+            initial['txtig'] = choices[0].text
+            initial['txtok'] = choices[1].text
+            initial['txtng'] = choices[2].text
+            initial['bugstsa'] = []
+            initial['bugstsc'] = []
+            initial['bugstsd'] = []
+            initial['bugcategory'] = []
+            for bsts in bugstatus:
+                if bsts.value.startswith('A'):
+                    initial['bugstsa'].append([bsts.value, bsts.text])
+                    pass
+                elif bsts.value.startswith('C'):
+                    initial['bugstsc'].append([bsts.value, bsts.text])
+                else:
+                    initial['bugstsd'].append([bsts.value, bsts.text])
+            for bcate in bugcategory:
+                initial['bugcategory'].append([bcate.value, bcate.text])
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
             navbar.append({'link':'#', 'title':'Edit Project', 'param':['',]})
         return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':initial,'initial':json.dumps(initial),'navbar':navbar,'navbarinfo':json.dumps(navbar)})

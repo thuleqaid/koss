@@ -11,6 +11,15 @@ Project New
 {% block body %}
 {{ block.super }}
 <div class="container">
+	<div id="bug-sts-empty" class="hidden">
+		<div class="input-group" id="group-BUGSTSTYPE-BUGSTSINDEX">
+			<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
+			<span class="input-group-addon"><input id="BUGSTSTYPE-code-BUGSTSINDEX" name="BUGSTSTYPE-code-BUGSTSINDEX" value="BUGSTSCODE" size="4" readonly /></span>
+			<input class="form-control" id="BUGSTSTYPE-text-BUGSTSINDEX" name="BUGSTSTYPE-text-BUGSTSINDEX" value="New Bug Status Text" readonly />
+			<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-BUGSTSTYPE-BUGSTSINDEX"><span class="glyphicon glyphicon-remove"></span></a></span>
+			<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsedit(this)" id="edit-BUGSTSTYPE-BUGSTSINDEX"><span class="glyphicon glyphicon-pencil"></span></a></span>
+		</div>
+	</div>
 	<form class="form" action="{% url 'review:projectedit' projectcode %}" method="POST">
 		{% csrf_token %}
 		{% if form.version_error %}
@@ -47,9 +56,205 @@ Project New
 				{% endfor %}
 			</div>
 		</div>
+		<div class="form-group col-sm-4">
+			<label for="id_txtig" class="control-label">Ignore</label>
+			<input class="form-control" id="id_txtig" name="txtig" type="text" value="{{ form.txtig }}" />
+			{% if form.txtig_error %}
+				<span class="help-block">
+					<label class="text-danger">{{ form.txtig_error }}</label>
+				</span>
+			{% endif %}
+		</div>
+		<div class="form-group col-sm-4">
+			<label for="id_txtok" class="control-label">OK</label>
+			<input class="form-control" id="id_txtok" name="txtok" type="text" value="{{ form.txtok }}" />
+			{% if form.txtok_error %}
+				<span class="help-block">
+					<label class="text-danger">{{ form.txtok_error }}</label>
+				</span>
+			{% endif %}
+		</div>
+		<div class="form-group col-sm-4">
+			<label for="id_txtng" class="control-label">NG</label>
+			<input class="form-control" id="id_txtng" name="txtng" type="text" value="{{ form.txtng }}" />
+			{% if form.txtng_error %}
+				<span class="help-block">
+					<label class="text-danger">{{ form.txtng_error }}</label>
+				</span>
+			{% endif %}
+		</div>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Action<a href="javascript:void(0)" onclick="bugstsadd(this)" id="add-buga"><span class="glyphicon glyphicon-plus"></span></a></th>
+					<th>Check<a href="javascript:void(0)" onclick="bugstsadd(this)" id="add-bugc"><span class="glyphicon glyphicon-plus"></span></a></th>
+					<th>Done<a href="javascript:void(0)" onclick="bugstsadd(this)" id="add-bugd"><span class="glyphicon glyphicon-plus"></span></a></th>
+				</tr>
+			</thead>
+			<tr>
+				<td>
+					<input type="hidden" id="count-buga" value="{{ form.bugstsa|length }}" />
+					{% for item in form.bugstsa %}
+						<div class="input-group">
+							{% ifequal forloop.counter 1 %}
+								<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
+							{% else %}
+								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
+							{% endifequal %}
+							<span class="input-group-addon"><input id="buga-code-{{ forloop.counter }}" name="buga-code-{{ forloop.counter }}" value="{{ item.0 }}" size="4" readonly /></span>
+							<input class="form-control" id="buga-text-{{ forloop.counter }}" name="buga-text-{{ forloop.counter }}" value="{{ item.1 }}" readonly />
+							{% ifequal forloop.counter 1 %}
+								<span class="input-group-addon glyphicon glyphicon-remove"></span>
+							{% else %}
+								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
+							{% endifequal %}
+							<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsedit(this)" id="edit-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-pencil"></span></a></span>
+						</div>
+					{% endfor %}
+				</td>
+				<td>
+					<input type="hidden" id="count-bugc" value="{{ form.bugstsc|length }}" />
+					{% for item in form.bugstsc %}
+						<div class="input-group">
+							{% ifequal forloop.counter 1 %}
+								<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
+							{% else %}
+								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
+							{% endifequal %}
+							<span class="input-group-addon"><input id="bugc-code-{{ forloop.counter }}" name="bugc-code-{{ forloop.counter }}" value="{{ item.0 }}" size="4" readonly /></span>
+							<input class="form-control" id="bugc-text-{{ forloop.counter }}" name="bugc-text-{{ forloop.counter }}" value="{{ item.1 }}" readonly />
+							{% ifequal forloop.counter 1 %}
+								<span class="input-group-addon glyphicon glyphicon-remove"></span>
+							{% else %}
+								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
+							{% endifequal %}
+							<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsedit(this)" id="edit-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-pencil"></span></a></span>
+						</div>
+					{% endfor %}
+				</td>
+				<td>
+					<input type="hidden" id="count-bugd" value="{{ form.bugstsd|length }}" />
+					{% for item in form.bugstsd %}
+						<div class="input-group" id="group-bugd-{{ forloop.counter }}">
+							{% ifequal forloop.counter 1 %}
+								<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
+							{% else %}
+								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
+							{% endifequal %}
+							<span class="input-group-addon"><input id="bugd-code-{{ forloop.counter }}" name="bugd-code-{{ forloop.counter }}" value="{{ item.0 }}" size="4" readonly /></span>
+							<input class="form-control" id="bugd-text-{{ forloop.counter }}" name="bugd-text-{{ forloop.counter }}" value="{{ item.1 }}" readonly />
+							{% ifequal forloop.counter 1 %}
+								<span class="input-group-addon glyphicon glyphicon-remove"></span>
+							{% else %}
+								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
+							{% endifequal %}
+							<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsedit(this)" id="edit-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-pencil"></span></a></span>
+						</div>
+					{% endfor %}
+				</td>
+			</tr>
+		</table>
 		<input type="hidden" name="initial" value="{{ initial }}">
 		<input type="hidden" name="navbarinfo" value="{{ navbarinfo }}">
 		<button type="submit" class="btn btn-primary">OK</button>
 	</form>
+	<div class="modal fade" id="bugstsModal" tabindex="-1" role="dialog">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="bugstsModalLabel">Edit Bug Status Text</h4>
+				</div>
+				<div class="modal-body">
+					<form>
+						<div class="form-group">
+							<label for="bugsts" class="control-label">Status Text:</label>
+							<input type="text" class="form-control" id="bugsts" />
+						</div>
+						<input type="hidden" id="target" />
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary" id="bugstsModalSave" onclick="updateBugstsText()">Save</button>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
+<script type="text/javascript">
+	function chgId(item, oldcnt, newcnt) {
+		var oldid = item.id;
+		var parts = oldid.split('-');
+		if (parts[parts.length-1] == oldcnt) {
+			parts[parts.length-1] = newcnt;
+			oldid = parts.join('-');
+			item.id = oldid;
+		}
+	}
+	function bugstsmoveup(clickitem) {
+		var parts = $(clickitem)[0].id.split('-');
+		var code1=$("#"+parts[1]+"-code-"+(parts[2]-1));
+		var code2=$("#"+parts[1]+"-code-"+parts[2]);
+		var text1=$("#"+parts[1]+"-text-"+(parts[2]-1));
+		var text2=$("#"+parts[1]+"-text-"+parts[2]);
+		var tmpvalue = code1.attr("value");
+		code1.attr("value", code2.attr("value"));
+		code2.attr("value", tmpvalue);
+		tmpvalue = text1.attr("value");
+		text1.attr("value", text2.attr("value"));
+		text2.attr("value", tmpvalue);
+	}
+	function bugstsremove(clickitem) {
+		var parts = $(clickitem)[0].id.split('-');
+		var selectItem = $("#group-"+parts[1]+"-"+parts[2]);
+		var countelement = $("#count-"+parts[1]);
+		var itemcount = countelement.val();
+		if (parts[2] < itemcount) {
+			var siblings = selectItem.nextAll();
+			var children = siblings.find('*');
+			for (var i = 0; i < siblings.length; i++) {
+				var newidx = i + parseInt(parts[2]);
+				var oldidx = newidx + 1;
+				chgId(siblings[i], oldidx, newidx);
+				for (var j = 0; j < children.length; j++) {
+					chgId(children[j], oldidx, newidx);
+				}
+			}
+		}
+		selectItem.remove();
+		countelement.val(itemcount-1);
+	}
+	function bugstsedit(clickitem) {
+		var parts = $(clickitem)[0].id.split('-');
+		var targetid = "#"+parts[1]+"-text-"+parts[2];
+		var bugststext = $(targetid);
+		var modal = $("#bugstsModal");
+		modal.find('#bugsts').val(bugststext.val());
+		modal.find('#target').val(targetid);
+		modal.modal('show');
+	}
+	function updateBugstsText() {
+		var modal = $("#bugstsModal");
+		var newval = modal.find('#bugsts').val();
+		$(modal.find('#target').val()).attr("value",newval);
+		modal.modal('hide');
+	}
+	function bugstsadd(clickitem) {
+		var parts = $(clickitem)[0].id.split('-');
+		var countelement = $("#count-"+parts[1]);
+		var itemcount = countelement.val();
+		var emptyform = $('#bug-sts-empty').html();
+		var bugstsidx = "" + (parseInt(itemcount) + 1);
+		var ptn = new RegExp("\\bBUGSTSTYPE\\b",'g');
+		emptyform = emptyform.replace(ptn, parts[1]);
+		ptn.compile("\\bBUGSTSINDEX\\b", 'g');
+		emptyform = emptyform.replace(ptn, bugstsidx);
+		ptn.compile("\\bBUGSTSCODE\\b", 'g');
+		emptyform = emptyform.replace(ptn, parts[1].toUpperCase().charAt(3));
+		var panelgroup = countelement.parent();
+		panelgroup.append(emptyform);
+		countelement.val(parseInt(itemcount)+1);
+	}
+</script>
 {% endblock %}
