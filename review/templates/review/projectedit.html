@@ -93,61 +93,88 @@ Project New
 			</thead>
 			<tr>
 				<td>
-					<input type="hidden" id="count-buga" value="{{ form.bugstsa|length }}" />
+					<input type="hidden" id="init-count-buga" value="{{ form.init_count_buga }}" />
+					<input type="hidden" name="count-buga" id="count-buga" value="{{ form.bugstsa|length }}" />
 					{% for item in form.bugstsa %}
 						<div class="input-group">
-							{% ifequal forloop.counter 1 %}
+							{% if forloop.counter > form.init_count_buga %}
 								<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
 							{% else %}
-								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
-							{% endifequal %}
+								{% ifequal forloop.counter 1 %}
+									<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
+								{% else %}
+									<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
+								{% endifequal %}
+							{% endif %}
 							<span class="input-group-addon"><input id="buga-code-{{ forloop.counter }}" name="buga-code-{{ forloop.counter }}" value="{{ item.0 }}" size="4" readonly /></span>
 							<input class="form-control" id="buga-text-{{ forloop.counter }}" name="buga-text-{{ forloop.counter }}" value="{{ item.1 }}" readonly />
-							{% ifequal forloop.counter 1 %}
+							{% if form.disable %}
 								<span class="input-group-addon glyphicon glyphicon-remove"></span>
 							{% else %}
-								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
-							{% endifequal %}
+								{% ifequal forloop.counter 1 %}
+									<span class="input-group-addon glyphicon glyphicon-remove"></span>
+								{% else %}
+									<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
+								{% endifequal %}
+							{% endif %}
 							<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsedit(this)" id="edit-buga-{{ forloop.counter }}"><span class="glyphicon glyphicon-pencil"></span></a></span>
 						</div>
 					{% endfor %}
 				</td>
 				<td>
-					<input type="hidden" id="count-bugc" value="{{ form.bugstsc|length }}" />
+					<input type="hidden" id="init-count-bugc" value="{{ form.init_count_bugc }}" />
+					<input type="hidden" name="count-bugc" id="count-bugc" value="{{ form.bugstsc|length }}" />
 					{% for item in form.bugstsc %}
 						<div class="input-group">
-							{% ifequal forloop.counter 1 %}
+							{% if forloop.counter > form.init_count_bugc %}
 								<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
 							{% else %}
-								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
-							{% endifequal %}
+								{% ifequal forloop.counter 1 %}
+									<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
+								{% else %}
+									<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
+								{% endifequal %}
+							{% endif %}
 							<span class="input-group-addon"><input id="bugc-code-{{ forloop.counter }}" name="bugc-code-{{ forloop.counter }}" value="{{ item.0 }}" size="4" readonly /></span>
 							<input class="form-control" id="bugc-text-{{ forloop.counter }}" name="bugc-text-{{ forloop.counter }}" value="{{ item.1 }}" readonly />
-							{% ifequal forloop.counter 1 %}
+							{% if form.disable %}
 								<span class="input-group-addon glyphicon glyphicon-remove"></span>
 							{% else %}
-								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
-							{% endifequal %}
+								{% ifequal forloop.counter 1 %}
+									<span class="input-group-addon glyphicon glyphicon-remove"></span>
+								{% else %}
+									<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
+								{% endifequal %}
+							{% endif %}
 							<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsedit(this)" id="edit-bugc-{{ forloop.counter }}"><span class="glyphicon glyphicon-pencil"></span></a></span>
 						</div>
 					{% endfor %}
 				</td>
 				<td>
-					<input type="hidden" id="count-bugd" value="{{ form.bugstsd|length }}" />
+					<input type="hidden" id="init-count-bugd" value="{{ form.init_count_bugd }}" />
+					<input type="hidden" name="count-bugd" id="count-bugd" value="{{ form.bugstsd|length }}" />
 					{% for item in form.bugstsd %}
 						<div class="input-group" id="group-bugd-{{ forloop.counter }}">
-							{% ifequal forloop.counter 1 %}
+							{% if forloop.counter > form.init_count_bugd %}
 								<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
 							{% else %}
-								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
-							{% endifequal %}
+								{% ifequal forloop.counter 1 %}
+									<span class="input-group-addon glyphicon glyphicon-chevron-up"></span>
+								{% else %}
+									<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsmoveup(this)" id="moveup-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-chevron-up"></span></a></span>
+								{% endifequal %}
+							{% endif %}
 							<span class="input-group-addon"><input id="bugd-code-{{ forloop.counter }}" name="bugd-code-{{ forloop.counter }}" value="{{ item.0 }}" size="4" readonly /></span>
 							<input class="form-control" id="bugd-text-{{ forloop.counter }}" name="bugd-text-{{ forloop.counter }}" value="{{ item.1 }}" readonly />
-							{% ifequal forloop.counter 1 %}
+							{% if form.disable %}
 								<span class="input-group-addon glyphicon glyphicon-remove"></span>
 							{% else %}
-								<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
-							{% endifequal %}
+								{% ifequal forloop.counter 1 %}
+									<span class="input-group-addon glyphicon glyphicon-remove"></span>
+								{% else %}
+									<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsremove(this)" id="remove-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-remove"></span></a></span>
+								{% endifequal %}
+							{% endif %}
 							<span class="input-group-addon"><a href="javascript:void(0)" onclick="bugstsedit(this)" id="edit-bugd-{{ forloop.counter }}"><span class="glyphicon glyphicon-pencil"></span></a></span>
 						</div>
 					{% endfor %}
@@ -190,6 +217,14 @@ Project New
 			parts[parts.length-1] = newcnt;
 			oldid = parts.join('-');
 			item.id = oldid;
+			if (item.name) {
+				parts = item.name.split('-');
+				if (parts[parts.length-1] == oldcnt) {
+					parts[parts.length-1] = newcnt;
+					oldid = parts.join('-');
+					item.name = oldid;
+				}
+			}
 		}
 	}
 	function bugstsmoveup(clickitem) {

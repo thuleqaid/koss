@@ -379,22 +379,76 @@ def projectedit(request, projectcode):
         form['txtok'] = request.POST.get('txtok','').strip()
         form['txtng'] = request.POST.get('txtng','').strip()
         form['status'] = request.POST['status']
+        key1 = 'bug{}-code-{}'
+        key2 = 'bug{}-text-{}'
+        print(request.POST.keys())
+        for bugsts in ('a','c','d'):
+            keycount = 'count-bug' + bugsts
+            keyform = 'bugsts' + bugsts
+            form[keyform] = []
+            maxno = 0
+            flag_newcode = False
+            for i in range(int(request.POST.get(keycount,0))):
+                value1 = request.POST.get(key1.format(bugsts,i+1),'').strip()
+                value2 = request.POST.get(key2.format(bugsts,i+1),'').strip()
+                if len(value1) > 1:
+                    curno = int(value1[1:])
+                    if curno > maxno:
+                        maxno = curno
+                else:
+                    flag_newcode = True
+                form[keyform].append([value1,value2])
+            if form['disable']:
+                if flag_newcode:
+                    for item in form[keyform]:
+                        if len(item[0]) <= 1:
+                            maxno += 1
+                            item[0] += str(maxno)
+            else:
+                maxno = 0
+                for item in form[keyform]:
+                    maxno += 1
+                    print(item)
+                    item[0] = item[0][0] + str(maxno)
         flag_valid = True
         if form['title'] == '':
             form['title_error'] = 'Empty Project Name'
             flag_valid = False
-        elif form['txtig'] == '':
+        if form['txtig'] == '':
             form['txtig_error'] = 'Empty Ignore Text'
             flag_valid = False
-        elif form['txtok'] == '':
+        if form['txtok'] == '':
             form['txtok_error'] = 'Empty OK Text'
             flag_valid = False
-        elif form['txtng'] == '':
+        if form['txtng'] == '':
             form['txtng_error'] = 'Empty NG Text'
             flag_valid = False
         if flag_valid:
             initial = json.loads(request.POST['initial'])
-            if form['title'] != initial['title'] or form['status'] != initial['status'] or form['txtok'] != initial['txtok'] or form['txtig'] != initial['txtig'] or form['txtng'] != initial['txtng']:
+            flag_changed = False
+            if form['title'] != initial['title']:
+                flag_changed = True
+            elif form['status'] != initial['status']:
+                flag_changed = True
+            elif form['txtok'] != initial['txtok']:
+                flag_changed = True
+            elif form['txtig'] != initial['txtig']:
+                flag_changed = True
+            elif form['txtng'] != initial['txtng']:
+                flag_changed = True
+            else:
+                for bugsts in ('a','c','d'):
+                    keyform = 'bugsts' + bugsts
+                    if len(form[keyform]) == len(initial[keyform]):
+                        for idx in range(len(form[keyform])):
+                            if form[keyform][idx][0] != initial[keyform][idx][0] or form[keyform][idx][1] != initial[keyform][idx][1]:
+                                flag_changed = True
+                                break
+                    else:
+                        flag_changed = True
+                    if flag_changed:
+                        break
+            if flag_changed:
                 choices = [Project.ChoiceItem(True, 'IG', form['txtig']),Project.ChoiceItem(True, 'OK', form['txtok']),Project.ChoiceItem(True, 'NG', form['txtng'])]
                 if form['code']:
                     prjs = list(Project.objects.filter(code=form['code']).filter(version__gte=form['version']))
@@ -467,7 +521,6 @@ def projectedit(request, projectcode):
             for bsts in bugstatus:
                 if bsts.value.startswith('A'):
                     initial['bugstsa'].append([bsts.value, bsts.text])
-                    pass
                 elif bsts.value.startswith('C'):
                     initial['bugstsc'].append([bsts.value, bsts.text])
                 else:
@@ -476,6 +529,9 @@ def projectedit(request, projectcode):
                 initial['bugcategory'].append([bcate.value, bcate.text])
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
             navbar.append({'link':'#', 'title':'Edit Project', 'param':['',]})
+        initial['init_count_buga'] = len(initial['bugstsa'])
+        initial['init_count_bugc'] = len(initial['bugstsc'])
+        initial['init_count_bugd'] = len(initial['bugstsd'])
         return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':initial,'initial':json.dumps(initial),'navbar':navbar,'navbarinfo':json.dumps(navbar)})
 
 def projectview(request, projectcode):

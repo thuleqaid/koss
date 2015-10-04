@@ -191,6 +191,14 @@
 			parts[parts.length-1] = newcnt;
 			oldid = parts.join('-');
 			item.id = oldid;
+			if (item.name) {
+				parts = item.name.split('-');
+				if (parts[parts.length-1] == oldcnt) {
+					parts[parts.length-1] = newcnt;
+					oldid = parts.join('-');
+					item.name = oldid;
+				}
+			}
 		}
 	}
 	function grpclick(clickitem) {
