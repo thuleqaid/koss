@@ -87,6 +87,7 @@ class SubProject(BaseVersionTable):
     project = models.CharField(max_length=CONST_CODE_LEN, default='')
     title = models.CharField(max_length=240)
     details = models.TextField(default='')
+    valid = models.BooleanField(default=True)
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:
@@ -103,6 +104,7 @@ class CheckList(BaseVersionTable):
     choices = models.TextField(default=json.dumps([]))
     bugstatus = models.TextField(default=json.dumps([]))
     bugcategory= models.TextField(default=json.dumps([]))
+    valid = models.BooleanField(default=True)
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:
@@ -115,6 +117,7 @@ class CheckGroup(BaseVersionTable):
     project = models.CharField(max_length=CONST_CODE_LEN)
     title = models.CharField(max_length=240)
     details = models.TextField(default=json.dumps([]))
+    valid = models.BooleanField(default=True)
     def contains(self, itemcode):
         validlist = self.staticContains(self.details, itemcode)
         listlen = len(validlist)
@@ -155,6 +158,7 @@ class CheckItem(BaseVersionTable):
     project = models.CharField(max_length=CONST_CODE_LEN, default='')
     title = models.CharField(max_length=240)
     details = models.TextField(default='')
+    valid = models.BooleanField(default=True)
     def __str__(self):
         return self.strPrefix()+self.title
     class Meta:

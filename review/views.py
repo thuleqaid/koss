@@ -1030,16 +1030,18 @@ def managechkgrp(request, projectcode):
     else:
         itmlist = list(CheckItem.latest('WHERE project="%s"'%(projectcode,)))
         grplist = list(CheckGroup.latest('WHERE project="%s"'%(projectcode,)))
-        groups = [{'id':x.id, 'title':x.title, 'code':x.code} for x in grplist]
+        groups = [{'id':x.id, 'title':x.title, 'code':x.code} for x in grplist if x.valid]
         data = []
         for item in itmlist:
-            data.append({'item':{'id':item.id,'code':item.code,'version':item.version,'title':item.title},'groups':[]})
-            for grp in grplist:
-                contains = grp.contains(item.code)
-                if contains:
-                    data[-1]['groups'].append(contains.valid)
-                else:
-                    data[-1]['groups'].append(False)
+            if item.valid:
+                data.append({'item':{'id':item.id,'code':item.code,'version':item.version,'title':item.title},'groups':[]})
+                for grp in grplist:
+                    if grp.valid:
+                        contains = grp.contains(item.code)
+                        if contains:
+                            data[-1]['groups'].append(contains.valid)
+                        else:
+                            data[-1]['groups'].append(False)
         navbar = []
         prj = getProject(projectcode)
         permlevel = permissionCheck(request, 4, prj)
@@ -1085,17 +1087,19 @@ def managechklst(request, projectcode):
     else:
         lstlist = list(CheckList.latest('WHERE project="%s"'%(projectcode,)))
         grplist = list(CheckGroup.latest('WHERE project="%s"'%(projectcode,)))
-        lists = [{'id':x.id, 'title':x.title, 'code':x.code} for x in lstlist]
+        lists = [{'id':x.id, 'title':x.title, 'code':x.code} for x in lstlist if x.valid]
         data = []
         for item in grplist:
-            data.append({'group':{'id':item.id,'code':item.code,'version':item.version,'title':item.title},'lists':[]})
-            for lst in lstlist:
-                groups = [CheckList.GroupItem(*x) for x in json.loads(lst.groups)]
-                finds = [x for x in groups if x.code == item.code]
-                if len(finds) > 0:
-                    data[-1]['lists'].append(finds[0].valid)
-                else:
-                    data[-1]['lists'].append(False)
+            if item.valid:
+                data.append({'group':{'id':item.id,'code':item.code,'version':item.version,'title':item.title},'lists':[]})
+                for lst in lstlist:
+                    if lst.valid:
+                        groups = [CheckList.GroupItem(*x) for x in json.loads(lst.groups)]
+                        finds = [x for x in groups if x.code == item.code]
+                        if len(finds) > 0:
+                            data[-1]['lists'].append(finds[0].valid)
+                        else:
+                            data[-1]['lists'].append(False)
         navbar = []
         prj = getProject(projectcode)
         permlevel = permissionCheck(request, 4, prj)
@@ -1157,19 +1161,27 @@ def modifychkgrp(request, projectcode, groupcode):
         items = json.loads(request.POST['initial'])
         form = {}
         form['title'] = request.POST.get('title','').strip()
+        if request.POST.get('valid','').strip() == '':
+            form['valid'] = False
+        else:
+            form['valid'] = True
         if form['title'] == '':
             form['title_error'] = 'Empty Title'
             return render(request, 'review/modifychkgrp.html', {'projectcode':projectcode, 'groupcode':groupcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
         else:
-            if form['title'] != items[-1]['title']:
+            if form['title'] != items[-1]['title'] or form['valid'] != items[-1]['valid']:
                 # form changed
                 chkgroup = CheckGroup.objects.get(pk = items[-1]['id'])
                 chkgroup.id = None
                 chkgroup.title = form['title']
+                chkgroup.valid = form['valid']
                 chkgroup.version += 1
                 chkgroup.author = request.user
                 chkgroup.save()
-                verupCheckGroup(request.user, projectcode, chkgroup)
+                if chkgroup.valid:
+                    verupCheckGroup(request.user, projectcode, chkgroup)
+                else:
+                    invalidCheckGroup(request.user, projectcode, chkgroup)
             else:
                 # form unchanged
                 pass
@@ -1180,13 +1192,15 @@ def modifychkgrp(request, projectcode, groupcode):
         permlevel = permissionCheck(request, 4, prj)
         items = []
         for group in list(CheckGroup.objects.filter(code=groupcode).filter(project=projectcode).order_by('version')):
-            items.append({'title':group.title, 'version':group.version, 'author':getUserName(group.author), 'id':group.id, 'update_time':localTime(group.update_time), 'details':[CheckGroup.GroupDetailItem(*x)._asdict() for x in json.loads(group.details)]})
+            items.append({'title':group.title, 'valid':group.valid, 'version':group.version, 'author':getUserName(group.author), 'id':group.id, 'update_time':localTime(group.update_time), 'details':[CheckGroup.GroupDetailItem(*x)._asdict() for x in json.loads(group.details)]})
         form  = {}
         if len(items) > 0:
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
             navbar.append({'link':reverse('review:managecheckgroup', args=(projectcode,)), 'title':'Manage CheckGroup', 'param':['review:managecheckgroup', projectcode]})
             navbar.append({'link':'#', 'title':'Modify CheckGroup', 'param':['',]})
             form['title'] = items[-1]['title']
+            form['valid'] = items[-1]['valid']
+            form['disable'] = (prj.status != Project.StatusInit)
             return render(request, 'review/modifychkgrp.html', {'projectcode':projectcode, 'groupcode':groupcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
         else:
             raise Http404('No Checkgroup.')
@@ -1198,20 +1212,28 @@ def modifychkitm(request, projectcode, itemcode):
         form = {}
         form['title'] = request.POST.get('title','').strip()
         form['details'] = request.POST.get('details','').strip()
+        if request.POST.get('valid','').strip() == '':
+            form['valid'] = False
+        else:
+            form['valid'] = True
         if form['title'] == '':
             form['title_error'] = 'Empty Title'
             return render(request, 'review/modifychkitm.html', {'projectcode':projectcode, 'itemcode':itemcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
         else:
-            if form['title'] != items[-1]['title'] or form['details'] != items[-1]['details']:
+            if form['title'] != items[-1]['title'] or form['details'] != items[-1]['details'] or form['valid'] != items[-1]['valid']:
                 # form changed
                 chkitem = CheckItem.objects.get(pk = items[-1]['id'])
                 chkitem.id = None
                 chkitem.title = form['title']
                 chkitem.details = form['details']
+                chkitem.valid = form['valid']
                 chkitem.version += 1
                 chkitem.author = request.user
                 chkitem.save()
-                verupCheckItem(request.user, projectcode, chkitem)
+                if chkitem.valid:
+                    verupCheckItem(request.user, projectcode, chkitem)
+                else:
+                    invalidCheckItem(request.user, projectcode, chkitem)
             else:
                 # form unchanged
                 pass
@@ -1222,7 +1244,7 @@ def modifychkitm(request, projectcode, itemcode):
         permlevel = permissionCheck(request, 4, prj)
         items = []
         for item in list(CheckItem.objects.filter(code=itemcode).filter(project=projectcode).order_by('version')):
-            items.append({'title':item.title, 'details':item.details, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time)})
+            items.append({'title':item.title, 'details':item.details, 'valid':item.valid, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time)})
         form  = {}
         if len(items) > 0:
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
@@ -1230,6 +1252,8 @@ def modifychkitm(request, projectcode, itemcode):
             navbar.append({'link':'#', 'title':'Modify CheckItem', 'param':['',]})
             form['title'] = items[-1]['title']
             form['details'] = items[-1]['details']
+            form['valid'] = items[-1]['valid']
+            form['disable'] = (prj.status != Project.StatusInit)
             return render(request, 'review/modifychkitm.html', {'projectcode':projectcode, 'itemcode':itemcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
         else:
             raise Http404('No Checkitem.')
@@ -1244,15 +1268,20 @@ def modifychklst(request, projectcode, listcode):
             form['selfcheck'] = False
         else:
             form['selfcheck'] = True
+        if request.POST.get('valid','').strip() == '':
+            form['valid'] = False
+        else:
+            form['valid'] = True
         if form['title'] == '':
             form['title_error'] = 'Empty Title'
             return render(request, 'review/modifychklst.html', {'projectcode':projectcode, 'listcode':listcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
         else:
-            if form['title'] != items[-1]['title'] or form['selfcheck'] != items[-1]['selfcheck']:
+            if form['title'] != items[-1]['title'] or form['selfcheck'] != items[-1]['selfcheck'] or form['valid'] != items[-1]['valid']:
                 # form changed
                 chklist = CheckList.objects.get(pk = items[-1]['id'])
                 chklist.id = None
                 chklist.title = form['title']
+                chklist.valid = form['valid']
                 chklist.version += 1
                 chklist.author = request.user
                 chklist.selfcheck = form['selfcheck']
@@ -1267,13 +1296,14 @@ def modifychklst(request, projectcode, listcode):
         permlevel = permissionCheck(request, 4, prj)
         items = []
         for item in list(CheckList.objects.filter(code=listcode).filter(project=projectcode).order_by('version')):
-            items.append({'title':item.title, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time), 'details':[CheckList.GroupItem(*x)._asdict() for x in json.loads(item.groups)], 'selfcheck':item.selfcheck})
+            items.append({'title':item.title, 'valid':item.valid, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time), 'details':[CheckList.GroupItem(*x)._asdict() for x in json.loads(item.groups)], 'selfcheck':item.selfcheck})
         form  = {}
         if len(items) > 0:
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
             navbar.append({'link':reverse('review:managechecklist', args=(projectcode,)), 'title':'Manage CheckList', 'param':['review:managechecklist', projectcode]})
             navbar.append({'link':'#', 'title':'Modify CheckList', 'param':['',]})
             form['title'] = items[-1]['title']
+            form['valid'] = items[-1]['valid']
             form['selfcheck'] = items[-1]['selfcheck']
             form['disable'] = (prj.status != Project.StatusInit)
             return render(request, 'review/modifychklst.html', {'projectcode':projectcode, 'listcode':listcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
@@ -1287,16 +1317,21 @@ def modifysubprj(request, projectcode, subprojectcode):
         form = {}
         form['title'] = request.POST.get('title','').strip()
         form['details'] = request.POST.get('details','').strip()
+        if request.POST.get('valid','').strip() == '':
+            form['valid'] = False
+        else:
+            form['valid'] = True
         if form['title'] == '':
             form['title_error'] = 'Empty Title'
             return render(request, 'review/modifysubprj.html', {'projectcode':projectcode, 'subprojectcode':subprojectcode, 'form':form, 'items':items, 'navbar':json.loads(request.POST['navbarinfo']), 'navbarinfo':request.POST['navbarinfo'], 'initial':request.POST['initial']})
         else:
-            if form['title'] != items[-1]['title'] or form['details'] != items[-1]['details']:
+            if form['title'] != items[-1]['title'] or form['details'] != items[-1]['details'] or form['valid'] != items[-1]['valid']:
                 # form changed
                 subprj = SubProject.objects.get(pk = items[-1]['id'])
                 subprj.id = None
                 subprj.title = form['title']
                 subprj.details = form['details']
+                subprj.valid = form['valid']
                 subprj.version += 1
                 subprj.author = request.user
                 subprj.save()
@@ -1310,13 +1345,15 @@ def modifysubprj(request, projectcode, subprojectcode):
         permlevel = permissionCheck(request, 4, prj)
         items = []
         for item in list(SubProject.objects.filter(code=subprojectcode).filter(project=projectcode).order_by('version')):
-            items.append({'title':item.title, 'details':item.details, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time)})
+            items.append({'title':item.title, 'details':item.details, 'valid':item.valid, 'version':item.version, 'author':getUserName(item.author), 'id':item.id, 'update_time':localTime(item.update_time)})
         form  = {}
         if len(items) > 0:
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
             navbar.append({'link':'#', 'title':'Modify SubProject', 'param':['',]})
             form['title'] = items[-1]['title']
             form['details'] = items[-1]['details']
+            form['valid'] = items[-1]['valid']
+            form['disable'] = (prj.status != Project.StatusInit)
             return render(request, 'review/modifysubprj.html', {'projectcode':projectcode, 'subprojectcode':subprojectcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
         else:
             raise Http404('No Subproject.')
@@ -1339,13 +1376,14 @@ def viewproject(request, projectcode):
         prjinfo = getProjectInfo(prj)
         subps_filter = []
         for subp in subps:
-            details = ''
-            for chklst in sorted(prjinfo.keys()):
-                details += '* **Locked**:{:>02} **Ok**:{:>02} **Ng**:{:>02} `{}` \n'.format(prjinfo[chklst]['subproject'][subp.code]['c_locked'],
-                    prjinfo[chklst]['subproject'][subp.code]['c_ok'],
-                    prjinfo[chklst]['subproject'][subp.code]['c_ng'],
-                    prjinfo[chklst]['checklist'].title)
-            subps_filter.append({'code':subp.code, 'title':subp.title, 'details':details})
+            if subp.valid:
+                details = ''
+                for chklst in sorted(prjinfo.keys()):
+                    details += '* **Locked**:{:>02} **Ok**:{:>02} **Ng**:{:>02} `{}` \n'.format(prjinfo[chklst]['subproject'][subp.code]['c_locked'],
+                        prjinfo[chklst]['subproject'][subp.code]['c_ok'],
+                        prjinfo[chklst]['subproject'][subp.code]['c_ng'],
+                        prjinfo[chklst]['checklist'].title)
+                subps_filter.append({'code':subp.code, 'title':subp.title, 'details':details})
         permlevel = permissionCheck(request, 0, projectcode)
         permdict = {}
         if prj.status == Project.StatusInit:

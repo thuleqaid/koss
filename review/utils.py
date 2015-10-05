@@ -268,29 +268,30 @@ def getProjectInfo(project):
         count0_lockable = 0
         count0_unlockable = 0
         for subp in subprjlist:
-            outinfo[chk.code]['subproject'][subp.code] = {'subproject':subp, 'report':[]}
-            count_lock = 0
-            count_lockable = 0
-            count_unlockable = 0
-            for subreport in [x for x in chkreports if x.subproject == subp.code]:
-                outinfo[chk.code]['subproject'][subp.code]['report'].append((subreport, getReportStatus(subreport)))
-                if subreport.lockstatus:
-                    count_lock += 1
-                else:
-                    if outinfo[chk.code]['subproject'][subp.code]['report'][-1][1]['status'] == 'NG':
-                        count_unlockable +=1
+            if subp.valid:
+                outinfo[chk.code]['subproject'][subp.code] = {'subproject':subp, 'report':[]}
+                count_lock = 0
+                count_lockable = 0
+                count_unlockable = 0
+                for subreport in [x for x in chkreports if x.subproject == subp.code]:
+                    outinfo[chk.code]['subproject'][subp.code]['report'].append((subreport, getReportStatus(subreport)))
+                    if subreport.lockstatus:
+                        count_lock += 1
                     else:
-                        count_lockable += 1
-            outinfo[chk.code]['subproject'][subp.code]['c_locked'] = count_lock
-            outinfo[chk.code]['subproject'][subp.code]['c_ok'] = count_lockable
-            outinfo[chk.code]['subproject'][subp.code]['c_ng'] = count_unlockable
-            if count_lockable + count_unlockable + count_lock > 0:
-                if count_lockable + count_unlockable == 0:
-                    count0_lock += 1
-                elif count_unlockable > 0:
-                    count0_unlockable += 1
-                else:
-                    count0_lockable += 1
+                        if outinfo[chk.code]['subproject'][subp.code]['report'][-1][1]['status'] == 'NG':
+                            count_unlockable +=1
+                        else:
+                            count_lockable += 1
+                outinfo[chk.code]['subproject'][subp.code]['c_locked'] = count_lock
+                outinfo[chk.code]['subproject'][subp.code]['c_ok'] = count_lockable
+                outinfo[chk.code]['subproject'][subp.code]['c_ng'] = count_unlockable
+                if count_lockable + count_unlockable + count_lock > 0:
+                    if count_lockable + count_unlockable == 0:
+                        count0_lock += 1
+                    elif count_unlockable > 0:
+                        count0_unlockable += 1
+                    else:
+                        count0_lockable += 1
         outinfo[chk.code]['c_locked'] = count0_lock
         outinfo[chk.code]['c_ok'] = count0_lockable
         outinfo[chk.code]['c_ng'] = count0_unlockable
@@ -330,6 +331,39 @@ def verupCheckGroup(user, projectcode, chkgrp):
         for idx,group in enumerate(groups):
             if group.code == chkgrp.code:
                 groups[idx] = CheckList.GroupItem(valid=True, code=chkgrp.code, version=chkgrp.version, id=chkgrp.id)
+                break
+        else:
+            continue
+        chk.groups = json.dumps(groups)
+        chk.id = None
+        chk.version += 1
+        chk.author = user
+        chk.save()
+
+def invalidCheckItem(user, projectcode, chkitem):
+    grplist = list(CheckGroup.latest('WHERE project="%s"'%(projectcode,)))
+    for grp in grplist:
+        details = grp.unpackDetails(grp.details)
+        for idx,detail in enumerate(details):
+            if detail.code == chkitem.code:
+                details.pop(idx)
+                break
+        else:
+            continue
+        grp.details = json.dumps(details)
+        grp.id = None
+        grp.version += 1
+        grp.author = user
+        grp.save()
+        verupCheckGroup(user, projectcode, grp)
+
+def invalidCheckGroup(user, projectcode, chkgrp):
+    chklist = list(CheckList.latest('WHERE project="%s"'%(projectcode,)))
+    for chk in chklist:
+        groups = [CheckList.GroupItem(*x) for x in json.loads(chk.groups)]
+        for idx,group in enumerate(groups):
+            if group.code == chkgrp.code:
+                groups.pop(idx)
                 break
         else:
             continue

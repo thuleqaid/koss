@@ -29,6 +29,14 @@ Modify CheckItem
 						<label for="id_details" class="control-label">Details</label>
 						<textarea class="form-control" name="details" id="id_details" rows="9">{{ form.details }}</textarea>
 					</div>
+					<div class="switch">
+						{% if form.valid %}
+							<input type="checkbox" id="id_valid" name="valid" checked {% if form.disable %}disabled{% endif %}/>
+						{% else %}
+							<input type="checkbox" id="id_valid" name="valid" {% if form.disable %}disabled{% endif %}/>
+						{% endif %}
+						<label for="id_valid">Valid</label>
+					</div>
 					<button type="submit" class="btn btn-primary">Modify</button>
 					<input type="hidden" name="navbarinfo" value="{{ navbarinfo }}" />
 					<input type="hidden" name="initial" value="{{ initial }}" />
