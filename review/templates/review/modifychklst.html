@@ -27,9 +27,9 @@ Modify CheckList
 					</div>
 					<div class="switch">
 						{% if form.selfcheck %}
-							<input type="checkbox" id="id_selfcheck" name="selfcheck" checked />
+							<input type="checkbox" id="id_selfcheck" name="selfcheck" checked {% if form.disable %}disabled{% endif %}/>
 						{% else %}
-							<input type="checkbox" id="id_selfcheck" name="selfcheck" />
+							<input type="checkbox" id="id_selfcheck" name="selfcheck" {% if form.disable %}disabled{% endif %}/>
 						{% endif %}
 						<label for="id_selfcheck">SelfCheck</label>
 					</div>

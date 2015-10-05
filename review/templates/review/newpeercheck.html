@@ -45,6 +45,13 @@
 			</div>
 		</div>
 	</div>
+	<div class="btn-group col-sm-12" data-toggle="buttons">
+		<label class="btn btn-success col-sm-3"><input type="checkbox" data-category="filter-OK" onchange="filterchoice(this)">OK</label>
+		<label class="btn btn-danger col-sm-3"><input type="checkbox" data-category="filter-NG" onchange="filterchoice(this)">NG</label>
+		<label class="btn btn-info col-sm-3"><input type="checkbox" data-category="filter-IG" onchange="filterchoice(this)">Ignore</label>
+		<label class="btn btn-default col-sm-3"><input type="checkbox" data-category="filter-" onchange="filterchoice(this)">Empty</label>
+	</div>
+	<br/><br/>
 	<form class="form" action="{% url 'review:newpeercheck' form.project.code form.subproject.code form.checklist.code %}" method="POST">
 		{% csrf_token %}
 		{% for groupinfo in form.groups %}
@@ -81,7 +88,7 @@
 									</div>
 								</div>
 							{% endif %}
-							<div class="form-group">
+							<div class="form-group filter-{{item.choice}}">
 								<label class="control-label">{{ item.code }}. {{ item.title }}</label>
 								{% if item.details %}
 									<a class="details" href="javascript:void(0)" onclick="showdetail(this)" data-target="#modal-{{ item.name }}"><span class="glyphicon glyphicon-question-sign"></span></a>
@@ -256,6 +263,10 @@
 	function showdetail(clickitem) {
 		var modal_id = $(clickitem).attr('data-target');
 		$(modal_id).modal();
+	}
+	function filterchoice(clickitem) {
+		var filter = $(clickitem).attr('data-category');
+		$("."+filter).toggleClass("hidden");
 	}
 	$(document).ready(function() {
 		var converter = new showdown.Converter();

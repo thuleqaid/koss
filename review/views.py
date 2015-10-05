@@ -31,7 +31,7 @@ def importchkitm(request, projectcode):
                 outlist.append([x.strip() for idx, x in enumerate(row) if idx < rowlength])
             for row in outlist:
                 row[0]=row[0].replace(' ', '_')
-                row.extends([''] * (rowlength - len(row)))
+                row.extend([''] * (rowlength - len(row)))
             navbar = []
             prj = getProject(projectcode)
             navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
@@ -303,7 +303,7 @@ def modifychklst(request, projectcode, listcode):
             else:
                 # form unchanged
                 pass
-            return HttpResponseRedirect(reverse('review:managecheckgroup', args=(projectcode,)))
+            return HttpResponseRedirect(reverse('review:managechecklist', args=(projectcode,)))
     else:
         navbar = []
         prj = getProject(projectcode)
@@ -318,6 +318,7 @@ def modifychklst(request, projectcode, listcode):
             navbar.append({'link':'#', 'title':'Modify CheckList', 'param':['',]})
             form['title'] = items[-1]['title']
             form['selfcheck'] = items[-1]['selfcheck']
+            form['disable'] = (prj.status != Project.StatusInit)
             return render(request, 'review/modifychklst.html', {'projectcode':projectcode, 'listcode':listcode, 'form':form, 'items':items, 'navbar':navbar, 'navbarinfo':json.dumps(navbar), 'initial':json.dumps(items)})
         else:
             raise Http404('No Checklist.')
