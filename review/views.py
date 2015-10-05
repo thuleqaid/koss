@@ -381,7 +381,7 @@ def projectedit(request, projectcode):
         form['status'] = request.POST['status']
         key1 = 'bug{}-code-{}'
         key2 = 'bug{}-text-{}'
-        print(request.POST.keys())
+        # bugstatus
         for bugsts in ('a','c','d'):
             keycount = 'count-bug' + bugsts
             keyform = 'bugsts' + bugsts
@@ -408,8 +408,36 @@ def projectedit(request, projectcode):
                 maxno = 0
                 for item in form[keyform]:
                     maxno += 1
-                    print(item)
                     item[0] = item[0][0] + str(maxno)
+        # bugcategory
+        keycount = 'count-bugcate'
+        keyform = 'bugcategory'
+        form[keyform] = []
+        maxno = {}
+        flag_newcode = False
+        for i in range(int(request.POST.get(keycount,0))):
+            value1 = request.POST.get(key1.format('cate',i+1),'').strip()
+            value2 = request.POST.get(key2.format('cate',i+1),'').strip()
+            if len(value1) > 1:
+                curno = int(value1[1:])
+                if curno > maxno.get(value1[0],0):
+                    maxno[value1[0]] = curno
+            else:
+                flag_newcode = True
+            form[keyform].append([value1,value2])
+        if form['disable']:
+            if flag_newcode:
+                for item in form[keyform]:
+                    if len(item[0]) <= 1:
+                        maxno.setdefault(item[0][0],0)
+                        maxno[item[0][0]] += 1
+                        item[0] += str(maxno[item[0][0]])
+        else:
+            maxno = {}
+            for item in form[keyform]:
+                maxno.setdefault(item[0][0],0)
+                maxno[item[0][0]] += 1
+                item[0] = item[0][0] + str(maxno[item[0][0]])
         flag_valid = True
         if form['title'] == '':
             form['title_error'] = 'Empty Project Name'
@@ -448,8 +476,17 @@ def projectedit(request, projectcode):
                         flag_changed = True
                     if flag_changed:
                         break
+                if len(form['bugcategory']) == len(initial['bugcategory']):
+                    for idx in range(len(form['bugcategory'])):
+                        if form['bugcategory'][idx][0] != initial['bugcategory'][idx][0] or form['bugcategory'][idx][1] != initial['bugcategory'][idx][1]:
+                            flag_changed = True
+                            break
+                else:
+                    flag_changed = True
             if flag_changed:
                 choices = [Project.ChoiceItem(True, 'IG', form['txtig']),Project.ChoiceItem(True, 'OK', form['txtok']),Project.ChoiceItem(True, 'NG', form['txtng'])]
+                bugstatus = [Project.BugStatus(True, x[0], x[1]) for x in form['bugstsa']] + [Project.BugStatus(True, x[0], x[1]) for x in form['bugstsc']] + [Project.BugStatus(True, x[0], x[1]) for x in form['bugstsd']]
+                bugcategory = [Project.BugCategory(True, x[0], x[1]) for x in form['bugcategory']]
                 if form['code']:
                     prjs = list(Project.objects.filter(code=form['code']).filter(version__gte=form['version']))
                     if len(prjs) > 1:
@@ -462,6 +499,8 @@ def projectedit(request, projectcode):
                         prj.status = form['status']
                         prj.author = request.user
                         prj.choices = json.dumps(choices)
+                        prj.bugstatus = json.dumps(bugstatus)
+                        prj.bugcategory = json.dumps(bugcategory)
                         prj.id = None
                         prj.save()
                 else:
@@ -470,6 +509,8 @@ def projectedit(request, projectcode):
                     prj.author = request.user
                     prj.setCode(Project.DefaultCategory, codeno)
                     prj.choices = json.dumps(choices)
+                    prj.bugstatus = json.dumps(bugstatus)
+                    prj.bugcategory = json.dumps(bugcategory)
                     prj.save()
                     # create an empty checkgroup and checklist
                     grpobj = CheckGroup(project = prj.code, title = "AnonymousGroup")
@@ -488,7 +529,7 @@ def projectedit(request, projectcode):
         if projectcode == '0':
             # add new project
             permlevel = permissionCheck(request, 9)
-            initial = {'title':'', 'status':Project.StatusChoice[0][0], 'choices':Project.StatusChoice, 'code':'', 'version':0, 'title_error':'', 'version_error':'', 'disable':False}
+            initial = {'title':'', 'status':Project.StatusChoice[0][0], 'choices':Project.StatusChoice, 'code':'', 'version':0, 'title_error':'', 'version_error':'', 'disable':False, 'close':False}
             initial['txtig_error'] = ''
             initial['txtok_error'] = ''
             initial['txtng_error'] = ''
@@ -504,7 +545,7 @@ def projectedit(request, projectcode):
             permlevel = permissionCheck(request, 4, projectcode)
             prjlist = list(Project.latest('WHERE code="%s"'%(projectcode,)))
             prj = prjlist[0]
-            initial = {'title':prj.title, 'status':prj.status, 'choices':Project.StatusChoice, 'code':prj.code, 'version':prj.version, 'title_error':'', 'version_error':'', 'disable':prj.status != Project.StatusChoice[0][0]}
+            initial = {'title':prj.title, 'status':prj.status, 'choices':Project.StatusChoice, 'code':prj.code, 'version':prj.version, 'title_error':'', 'version_error':'', 'disable':prj.status != Project.StatusInit, 'close':prj.status == Project.StatusClosed}
             choices = [Project.ChoiceItem(*x) for x in json.loads(prj.choices)]
             bugstatus = [Project.BugStatus(*x) for x in json.loads(prj.bugstatus)]
             bugcategory = [Project.BugCategory(*x) for x in json.loads(prj.bugcategory)]
@@ -532,6 +573,7 @@ def projectedit(request, projectcode):
         initial['init_count_buga'] = len(initial['bugstsa'])
         initial['init_count_bugc'] = len(initial['bugstsc'])
         initial['init_count_bugd'] = len(initial['bugstsd'])
+        initial['init_count_bugcate'] = len(initial['bugcategory'])
         return render(request, 'review/projectedit.html', {'projectcode':projectcode,'form':initial,'initial':json.dumps(initial),'navbar':navbar,'navbarinfo':json.dumps(navbar)})
 
 def projectview(request, projectcode):

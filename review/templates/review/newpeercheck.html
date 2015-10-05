@@ -175,19 +175,22 @@
 </div>
 <script type="text/javascript">
 	function chgId(item, oldcnt, newcnt) {
-		var oldid = item.id;
-		var parts = oldid.split('-');
-		if (parts[parts.length-1] == oldcnt) {
-			parts[parts.length-1] = newcnt;
-			oldid = parts.join('-');
-			item.id = oldid;
-			if (item.name) {
-				parts = item.name.split('-');
-				if (parts[parts.length-1] == oldcnt) {
-					parts[parts.length-1] = newcnt;
-					oldid = parts.join('-');
-					item.name = oldid;
-				}
+		if (item.id) {
+			var oldid = item.id;
+			var parts = oldid.split('-');
+			if (parts[parts.length-1] == oldcnt) {
+				parts[parts.length-1] = newcnt;
+				oldid = parts.join('-');
+				item.id = oldid;
+			}
+		}
+		if (item.name) {
+			var oldid = item.name;
+			var parts = oldid.split('-');
+			if (parts[parts.length-1] == oldcnt) {
+				parts[parts.length-1] = newcnt;
+				oldid = parts.join('-');
+				item.name = oldid;
 			}
 		}
 	}
