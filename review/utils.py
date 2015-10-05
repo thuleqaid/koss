@@ -342,3 +342,11 @@ def verupCheckGroup(user, projectcode, chkgrp):
 def localTime(dt, offset=8):
     newdt = dt + datetime.timedelta(hours=offset)
     return newdt.strftime("%Y/%m/%d %H:%M:%S")
+
+def prepareDB():
+    grp = list(Group.objects.filter(name='ProjectUser'))
+    if len(grp) > 0:
+        return
+    else:
+        grp = Group(name='ProjectUser')
+        grp.save()
