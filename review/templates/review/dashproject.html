@@ -28,33 +28,42 @@
 				title: {
 					text: '子项目数'
 				},
-				plotLines: [{
-					value: {{ chartinfo.maxcount }},
-					width: 2,
-					color: '#821740',
-					label: {
-						text: '子项目总数',
-						style: {
-							color: '#898989'
-						}
+				stackLabels: {
+					enabled: true,
+					style: {
+						fontWeight: 'bold',
+						color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray',
 					}
-					}],
+				},
+				min: 0,
 				max: {{ chartinfo.maxcount }}
 			},
 			plotOptions: {
 				column: {
-					stacking: 'normal'
+					stacking: 'normal',
+					dataLabels: {
+						enabled: true,
+						color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
+					}
+				}
+			},
+			tooltip: {
+				formatter:function() {
+					return '<b>'+this.x+'</b> - '+this.series.name+':'+this.y+'<br>'+this.point.extra;
 				}
 			},
 			series: [{
+				name: '未处理',
+				data: {{ chartinfo.c_null|safe }}
+				}, {
 				name: '不可关闭',
-				data: {{ chartinfo.c_ng }}
+				data: {{ chartinfo.c_ng|safe }}
 				}, {
 				name: '可关闭',
-				data: {{ chartinfo.c_ok }}
+				data: {{ chartinfo.c_ok|safe }}
 				}, {
 				name: '已关闭',
-				data: {{ chartinfo.c_locked }}
+				data: {{ chartinfo.c_locked|safe }}
 				}]
 			});
 	});

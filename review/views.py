@@ -1460,15 +1460,37 @@ def projectdash(request, projectcode):
     prj = getProject(projectcode)
     permlevel = permissionCheck(request, 2, prj)
     prjinfo = getProjectInfo(prj)
-    datakeys = ('c_locked', 'c_ok', 'c_ng')
+    datakeys = ('c_locked', 'c_ok', 'c_ng', 'c_null')
     chartinfo = { 'checklist':[] }
+    # get authors of subprojects
+    authors = {}
+    chk = list(prjinfo.keys())[0]
+    for subpcode in sorted(prjinfo[chk]['subproject'].keys()):
+        authors[subpcode] = [getUserName(x) for x in getAuthors(subpcode)]
     for key in datakeys:
         chartinfo[key] = []
     for chk in sorted(prjinfo.keys()):
         chartinfo['maxcount'] = len(prjinfo[chk]['subproject'])
         chartinfo['checklist'].append(prjinfo[chk]['checklist'].title)
+        subpnames = {}
         for key in datakeys:
-            chartinfo[key].append(prjinfo[chk][key])
+            subpnames[key] = []
+        for subpcode in sorted(prjinfo[chk]['subproject'].keys()):
+            if prjinfo[chk]['subproject'][subpcode]['c_ng'] > 0:
+                # NG Reports exist
+                tmp_cate = 'c_ng'
+            elif prjinfo[chk]['subproject'][subpcode]['c_ok'] > 0:
+                # Unlocked OK Reports exist
+                tmp_cate = 'c_ok'
+            elif prjinfo[chk]['subproject'][subpcode]['c_locked'] > 0:
+                # All Reports are locked
+                tmp_cate = 'c_locked'
+            else:
+                # No Report
+                tmp_cate = 'c_null'
+            subpnames[tmp_cate].append(prjinfo[chk]['subproject'][subpcode]['subproject'].title + ' : ' + ','.join(authors.get(subpcode,[])))
+        for key in datakeys:
+            chartinfo[key].append({'y':len(subpnames[key]),'extra':"  " + "<br>  ".join(subpnames[key])})
     navbar = []
     navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
     navbar.append({'link':'#', 'title':'Dashboard', 'param':['',]})
