@@ -1372,18 +1372,17 @@ def viewproject(request, projectcode):
             groups = [CheckList.GroupItem(*x) for x in json.loads(chk.groups)]
             data.append({'title':chk.title, 'id':chk.id, 'code':chk.code, 'version':chk.version, 'selfcheck':chk.selfcheck,
                 'groups':[{'title':grpmap[x.code], 'id':x.id, 'code':x.code, 'version':x.version} for x in groups]})
-        subps = SubProject.latest('WHERE project="%s"' % (prj.code,))
+        subps = getSubProjects(prj)
         prjinfo = getProjectInfo(prj)
         subps_filter = []
         for subp in subps:
-            if subp.valid:
-                details = ''
-                for chklst in sorted(prjinfo.keys()):
-                    details += '* **Locked**:{:>02} **Ok**:{:>02} **Ng**:{:>02} `{}` \n'.format(prjinfo[chklst]['subproject'][subp.code]['c_locked'],
-                        prjinfo[chklst]['subproject'][subp.code]['c_ok'],
-                        prjinfo[chklst]['subproject'][subp.code]['c_ng'],
-                        prjinfo[chklst]['checklist'].title)
-                subps_filter.append({'code':subp.code, 'title':subp.title, 'details':details})
+            details = ''
+            for chklst in sorted(prjinfo.keys()):
+                details += '* **Locked**:{:>02} **Ok**:{:>02} **Ng**:{:>02} `{}` \n'.format(prjinfo[chklst]['subproject'][subp.code]['c_locked'],
+                    prjinfo[chklst]['subproject'][subp.code]['c_ok'],
+                    prjinfo[chklst]['subproject'][subp.code]['c_ng'],
+                    prjinfo[chklst]['checklist'].title)
+            subps_filter.append({'code':subp.code, 'title':subp.title, 'details':details})
         permlevel = permissionCheck(request, 0, projectcode)
         permdict = {}
         if prj.status == Project.StatusInit:

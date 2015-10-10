@@ -155,7 +155,7 @@ def getNextAction(request, project):
     # 取得所有selfcheck的checklist code
     selfchks = [x.code for x in CheckList.latest('WHERE project="%s"' % (prjcode,)) if x.selfcheck]
     # 取得所有subproject的code
-    subplist = [x.code for x in SubProject.latest('WHERE project="%s"' % (prjcode,))]
+    subplist = [x.code for x in getSubProjects(prjcode)]
     joblist = []
     for subp in subplist:
         # 取得subproject的所有report
@@ -252,7 +252,7 @@ def getProjectInfo(project):
         prjcode = project.code
     else:
         prjcode = project
-    subprjlist = list(SubProject.latest('WHERE project="%s"'%(prjcode,)))
+    subprjlist = getSubProjects(prjcode)
     chklist = list(CheckList.latest('WHERE project="%s"'%(prjcode,)))
     reports = list(CheckListResult.latest())
     outinfo = {}
@@ -268,30 +268,29 @@ def getProjectInfo(project):
         count0_lockable = 0
         count0_unlockable = 0
         for subp in subprjlist:
-            if subp.valid:
-                outinfo[chk.code]['subproject'][subp.code] = {'subproject':subp, 'report':[]}
-                count_lock = 0
-                count_lockable = 0
-                count_unlockable = 0
-                for subreport in [x for x in chkreports if x.subproject == subp.code]:
-                    outinfo[chk.code]['subproject'][subp.code]['report'].append((subreport, getReportStatus(subreport)))
-                    if subreport.lockstatus:
-                        count_lock += 1
+            outinfo[chk.code]['subproject'][subp.code] = {'subproject':subp, 'report':[]}
+            count_lock = 0
+            count_lockable = 0
+            count_unlockable = 0
+            for subreport in [x for x in chkreports if x.subproject == subp.code]:
+                outinfo[chk.code]['subproject'][subp.code]['report'].append((subreport, getReportStatus(subreport)))
+                if subreport.lockstatus:
+                    count_lock += 1
+                else:
+                    if outinfo[chk.code]['subproject'][subp.code]['report'][-1][1]['status'] == 'NG':
+                        count_unlockable +=1
                     else:
-                        if outinfo[chk.code]['subproject'][subp.code]['report'][-1][1]['status'] == 'NG':
-                            count_unlockable +=1
-                        else:
-                            count_lockable += 1
-                outinfo[chk.code]['subproject'][subp.code]['c_locked'] = count_lock
-                outinfo[chk.code]['subproject'][subp.code]['c_ok'] = count_lockable
-                outinfo[chk.code]['subproject'][subp.code]['c_ng'] = count_unlockable
-                if count_lockable + count_unlockable + count_lock > 0:
-                    if count_lockable + count_unlockable == 0:
-                        count0_lock += 1
-                    elif count_unlockable > 0:
-                        count0_unlockable += 1
-                    else:
-                        count0_lockable += 1
+                        count_lockable += 1
+            outinfo[chk.code]['subproject'][subp.code]['c_locked'] = count_lock
+            outinfo[chk.code]['subproject'][subp.code]['c_ok'] = count_lockable
+            outinfo[chk.code]['subproject'][subp.code]['c_ng'] = count_unlockable
+            if count_lockable + count_unlockable + count_lock > 0:
+                if count_lockable + count_unlockable == 0:
+                    count0_lock += 1
+                elif count_unlockable > 0:
+                    count0_unlockable += 1
+                else:
+                    count0_lockable += 1
         outinfo[chk.code]['c_locked'] = count0_lock
         outinfo[chk.code]['c_ok'] = count0_lockable
         outinfo[chk.code]['c_ng'] = count0_unlockable
@@ -384,3 +383,20 @@ def prepareDB():
     else:
         grp = Group(name='ProjectUser')
         grp.save()
+
+def getSubProjects(project, status=1):
+    # @param status 1:valid, 2:invalid, 3:all
+    if isinstance(project, Project):
+        prjcode = project.code
+    else:
+        prjcode = project
+    # 取得所有subproject的code
+    if status == 1:
+        subplist = [x for x in SubProject.latest('WHERE project="%s"' % (prjcode,)) if x.valid]
+    elif status == 2:
+        subplist = [x for x in SubProject.latest('WHERE project="%s"' % (prjcode,)) if not x.valid]
+    elif status == 3:
+        subplist = [x for x in SubProject.latest('WHERE project="%s"' % (prjcode,))]
+    else:
+        subplist = []
+    return subplist
