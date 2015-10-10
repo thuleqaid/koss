@@ -18,15 +18,16 @@
 			</a>
 		</h2>
 	</div>
-	{% if permission.manage %}
-		<ul>
+	<ul>
+		{% if permission.manage %}
 			<li><a href="{% url 'review:manageuser' project.code %}">Manage User</a></li>
 			<li><a href="{% url 'review:importcheckitem' project.code %}">Import CheckItems</a></li>
 			<li><a href="{% url 'review:managecheckgroup' project.code %}">Manage CheckGroups</a></li>
 			<li><a href="{% url 'review:managechecklist' project.code %}">Manage CheckLists</a></li>
 			<li><a href="{% url 'review:addsubproject' project.code %}">Add Subprojects</a></li>
-		</ul>
-	{% endif %}
+		{% endif %}
+		<li><a href="{% url 'review:managechartgroup' project.code %}">Manage ChartGroup</a></li>
+	</ul>
 	<h4>Checklist List:</h4>
 	<table class="table table-hover table-striped">
 		<thead>

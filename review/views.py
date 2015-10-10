@@ -20,6 +20,34 @@ def index(request):
     return render(request, 'review/index.html', {'projects':prjs,'permission':permdict})
 
 @login_required
+def addchartgrp(request, projectcode):
+    if request.method == 'POST':
+        projectcode = request.POST['projectcode']
+        grptitle    = request.POST['title'].strip()
+        if grptitle:
+            grpobj      = ChartGroup(project = projectcode, title = grptitle)
+            grpobj.author = request.user
+            grpobj.setCode('CHART', ChartGroup.nextCode('CHART'))
+            grpobj.save()
+        return HttpResponseRedirect(reverse('review:managechartgroup', args=(projectcode,)))
+
+@login_required
+def addchartsubgrp(request, projectcode, chartcode):
+    if request.method == 'POST':
+        grptitle    = request.POST['title'].strip()
+        if grptitle:
+            chartlist = list(ChartGroup.latest('WHERE code="%s"'%(chartcode,)))
+            if len(chartlist) > 0:
+                chartobj = chartlist[0]
+                details = json.loads(chartobj.details)
+                details.append(ChartGroup.Group(grptitle,[]))
+                chartobj.details = json.dumps(details)
+                chartobj.id = None
+                chartobj.version += 1
+                chartobj.save()
+        return HttpResponseRedirect(reverse('review:managechartgroup', args=(projectcode,)))
+
+@login_required
 def addchkgrp(request, projectcode):
     if request.method == 'POST':
         projectcode = request.POST['projectcode']
@@ -991,6 +1019,90 @@ def lockreport(request, projectcode, reportcode):
             report.id = None
             report.save()
     return HttpResponseRedirect(reverse('review:subproject', args=(projectcode, report.subproject)))
+
+@login_required
+def managechartgrp(request, projectcode):
+    if request.method == 'POST':
+        initial = json.loads(request.POST['initial'])
+        chartidx = int(request.POST['chartindex'])
+        basedata = initial[chartidx]['data']
+        flag_changed = False
+        newgroup = []
+        newdata = []
+        for idx in range(len(initial[chartidx]['groups'])):
+            newval = request.POST.get('group-{}-{}'.format(chartidx, idx),'').strip()
+            newgroup.append(newval)
+            if newval != initial[chartidx]['groups'][idx]:
+                flag_changed = True
+        for i in range(len(basedata)):
+            newdata.append([basedata[i][0]['code']])
+            for j in range(1, len(basedata[i])):
+                checked = request.POST.get(basedata[i][j]['id'],False)
+                if basedata[i][j]['checked']:
+                    if checked=='on':
+                        # both True
+                        newval = True
+                    else:
+                        # remove
+                        newval = False
+                        flag_changed = True
+                else:
+                    if checked=='on':
+                        # add
+                        newval = True
+                        flag_changed = True
+                    else:
+                        # both True
+                        newval = False
+                newdata[i].append(newval)
+        if flag_changed:
+            chartlist = list(ChartGroup.latest('WHERE code="%s"'%(initial[chartidx]['code'],)))
+            if len(chartlist) > 0:
+                chartobj = chartlist[0]
+                details = []
+                for idx,grp in enumerate(newgroup):
+                    if grp:
+                        subcodes = []
+                        for subj in range(len(newdata)):
+                            if newdata[subj][idx+1]:
+                                subcodes.append(newdata[subj][0])
+                        details.append(ChartGroup.Group(grp, subcodes))
+                chartobj.details = json.dumps(details)
+                chartobj.author = request.user
+                chartobj.id = None
+                chartobj.version += 1
+                chartobj.save()
+        return HttpResponseRedirect(reverse('review:projectview', args=(projectcode,)))
+    else:
+        subprjs = getSubProjects(projectcode)
+        subprjinfo = []
+        for subprj in subprjs:
+            subprjinfo.append([subprj.code, subprj.title])
+        charts = list(ChartGroup.latest('WHERE project="%s"'%(projectcode,)))
+        data = []
+        # value: {'title':'...', 'code':'...', 'groups':[group-title,...], 'data':...}
+        #   data: switchInfo[i][j] i=0..count_subprjs-1, j=0..count_subgrps
+        #     switchInfo(j=0): {'code':subproject-code 'title':subproject-title }
+        #     switchInfo(j>0): {'id':'...', 'checked':T/F }
+        for chart in charts:
+            data.append({'title':chart.title, 'code':chart.code, 'groups':[], 'data':[]})
+            subgroups = [ChartGroup.Group(*x) for x in json.loads(chart.details)]
+            for subgrp in subgroups:
+                data[-1]['groups'].append(subgrp.subtitle)
+            for subcode in subprjinfo:
+                data[-1]['data'].append([{'code':subcode[0],'title':subcode[1]}])
+                for idx,subgrp in enumerate(subgroups):
+                    if subcode[0] in subgrp.subprjs:
+                        checked = True
+                    else:
+                        checked = False
+                    data[-1]['data'][-1].append({'id':'chk-{}-{}-{}'.format(chart.code,subcode[0],idx),'checked':checked})
+        navbar = []
+        prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 3, prj)
+        navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
+        navbar.append({'link':'#', 'title':'Manage ChartGroup', 'param':['',]})
+        return render(request, 'review/managechartgrp.html', {'projectcode':projectcode, 'data':data, 'navbar':navbar, 'initial':json.dumps(data)})
 
 @login_required
 def managechkgrp(request, projectcode):

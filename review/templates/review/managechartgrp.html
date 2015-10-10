@@ -1,0 +1,80 @@
+{% extends 'review/base_js.html' %}
+{% load staticfiles %}
+
+{% block title %}Manage ChartGroups{% endblock %}
+
+{% block body %}
+{{ block.super }}
+<div class="container">
+	<form class="form" action="{% url 'review:addchartgroup' projectcode %}" method="POST">
+		{% csrf_token %}
+		<div class="input-group">
+			<span class="input-group-addon">Group Title:</span>
+			<input type="text" class="form-control" id="title" name="title" placeholder="Enter new group title">
+			<span class="input-group-addon"><button type="submit">Add</button></span>
+		</div>
+		<input type="hidden" name="projectcode" value="{{ projectcode }}">
+	</form>
+	{% if data %}
+	<div>
+		<ul class="nav nav-tabs">
+			{% for item in data %}
+				<li {% ifequal forloop.counter 1 %}class="active"{% endifequal %}><a href="#tab{{ forloop.counter }}" data-toggle="tab">{{ item.title }}</a></li>
+			{% endfor %}
+		</ul>
+		<div class="tab-content">
+			{% for item in data %}
+				<div class="tab-pane{% ifequal forloop.counter 1 %} active{% endifequal %}" id="tab{{ forloop.counter }}">
+					<form class="form" action="{% url 'review:managechartgroup' projectcode %}" method="POST">
+						{% csrf_token %}
+						<table class="table table-hover table-striped" id="radiotable">
+							<thead>
+								<tr>
+									<td>SubProject</td>
+									{% for grp in item.groups %}
+										<td><input type="text" name="group-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}" value="{{ grp }}" /></td>
+									{% endfor %}
+								</tr>
+							</thead>
+							<tbody>
+								{% for row in item.data %}
+									<tr>
+										{% for cell in row %}
+											{% ifequal forloop.counter 1 %}
+												<td>{{ cell.code }}. {{ cell.title }}</td>
+											{% else %}
+												<td>
+													<div class="switch">
+														{% if cell.checked %}
+															<input type="checkbox" name="{{ cell.id }}" checked />
+														{% else %}
+															<input type="checkbox" name="{{ cell.id }}" />
+														{% endif %}
+													</div>
+												</td>
+											{% endifequal %}
+										{% endfor %}
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+						<button type="submit" class="btn btn-primary">OK</button>
+						<input type="hidden" name="chartindex" value="{{ forloop.counter0 }}">
+						<input type="hidden" name="initial" value="{{ initial }}">
+					</form>
+					<form class="form" action="{% url 'review:addchartsubgroup' projectcode item.code %}" method="POST">
+						{% csrf_token %}
+						<div class="input-group">
+							<span class="input-group-addon">SubGroup Title:</span>
+							<input type="text" class="form-control" id="title" name="title" placeholder="Enter new group title">
+							<span class="input-group-addon"><button type="submit">Add</button></span>
+						</div>
+						<input type="hidden" name="projectcode" value="{{ projectcode }}">
+					</form>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
+	{% endif %}
+</div>
+{% endblock %}

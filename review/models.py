@@ -210,3 +210,17 @@ class CheckBugItem(BaseVersionTable):
         return self.strPrefix()+self.status
     class Meta:
         unique_together = [['code', 'version'],]
+
+@python_2_unicode_compatible
+class ChartGroup(BaseVersionTable):
+    Group = collections.namedtuple('Group', ['subtitle','subprjs'])
+    author = models.ForeignKey(User)
+    project = models.CharField(max_length=CONST_CODE_LEN, default='')
+    title = models.CharField(max_length=240)
+    details = models.TextField(default=json.dumps([]))
+    allowall = models.BooleanField(default=False)
+    valid = models.BooleanField(default=True)
+    def __str__(self):
+        return self.strPrefix()+self.title
+    class Meta:
+        unique_together = [['code', 'version'],]
