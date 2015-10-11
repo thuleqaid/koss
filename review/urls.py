@@ -14,7 +14,6 @@ urlpatterns = [
 	url(r'^project/(?P<projectcode>\w+)/manage/checklist$', views.managechklst, name='managechecklist'),
 	url(r'^project/(?P<projectcode>\w+)/manage/user$', views.manageusr, name='manageuser'),
 	url(r'^project/(?P<projectcode>\w+)/add/chartgroup$', views.addchartgrp, name='addchartgroup'),
-	url(r'^project/(?P<projectcode>\w+)/add/chartsubgroup/(?P<chartcode>\w+)$', views.addchartsubgrp, name='addchartsubgroup'),
 	url(r'^project/(?P<projectcode>\w+)/add/checkgroup$', views.addchkgrp, name='addcheckgroup'),
 	url(r'^project/(?P<projectcode>\w+)/add/checklist$', views.addchklst, name='addchecklist'),
 	url(r'^project/(?P<projectcode>\w+)/add/subproject$', views.addsubprj, name='addsubproject'),

@@ -62,15 +62,6 @@
 						<input type="hidden" name="chartindex" value="{{ forloop.counter0 }}">
 						<input type="hidden" name="initial" value="{{ initial }}">
 					</form>
-					<form class="form" action="{% url 'review:addchartsubgroup' projectcode item.code %}" method="POST">
-						{% csrf_token %}
-						<div class="input-group">
-							<span class="input-group-addon">SubGroup Title:</span>
-							<input type="text" class="form-control" id="title" name="title" placeholder="Enter new group title">
-							<span class="input-group-addon"><button type="submit">Add</button></span>
-						</div>
-						<input type="hidden" name="projectcode" value="{{ projectcode }}">
-					</form>
 				</div>
 			{% endfor %}
 		</div>

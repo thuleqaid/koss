@@ -32,22 +32,6 @@ def addchartgrp(request, projectcode):
         return HttpResponseRedirect(reverse('review:managechartgroup', args=(projectcode,)))
 
 @login_required
-def addchartsubgrp(request, projectcode, chartcode):
-    if request.method == 'POST':
-        grptitle    = request.POST['title'].strip()
-        if grptitle:
-            chartlist = list(ChartGroup.latest('WHERE code="%s"'%(chartcode,)))
-            if len(chartlist) > 0:
-                chartobj = chartlist[0]
-                details = json.loads(chartobj.details)
-                details.append(ChartGroup.Group(grptitle,[]))
-                chartobj.details = json.dumps(details)
-                chartobj.id = None
-                chartobj.version += 1
-                chartobj.save()
-        return HttpResponseRedirect(reverse('review:managechartgroup', args=(projectcode,)))
-
-@login_required
 def addchkgrp(request, projectcode):
     if request.method == 'POST':
         projectcode = request.POST['projectcode']
@@ -1037,23 +1021,28 @@ def managechartgrp(request, projectcode):
         for i in range(len(basedata)):
             newdata.append([basedata[i][0]['code']])
             for j in range(1, len(basedata[i])):
-                checked = request.POST.get(basedata[i][j]['id'],False)
-                if basedata[i][j]['checked']:
-                    if checked=='on':
-                        # both True
-                        newval = True
-                    else:
-                        # remove
-                        newval = False
-                        flag_changed = True
+                if j == len(basedata[i]) - 1 and newgroup[j - 1] == '':
+                    # the last empty group
+                    newval = False
                 else:
-                    if checked=='on':
-                        # add
-                        newval = True
-                        flag_changed = True
+                    # user append an subgroup
+                    checked = request.POST.get(basedata[i][j]['id'],False)
+                    if basedata[i][j]['checked']:
+                        if checked=='on':
+                            # both True
+                            newval = True
+                        else:
+                            # remove
+                            newval = False
+                            flag_changed = True
                     else:
-                        # both True
-                        newval = False
+                        if checked=='on':
+                            # add
+                            newval = True
+                            flag_changed = True
+                        else:
+                            # both True
+                            newval = False
                 newdata[i].append(newval)
         if flag_changed:
             chartlist = list(ChartGroup.latest('WHERE code="%s"'%(initial[chartidx]['code'],)))
@@ -1087,6 +1076,7 @@ def managechartgrp(request, projectcode):
         for chart in charts:
             data.append({'title':chart.title, 'code':chart.code, 'groups':[], 'data':[]})
             subgroups = [ChartGroup.Group(*x) for x in json.loads(chart.details)]
+            subgroups.append(ChartGroup.Group('',[]))
             for subgrp in subgroups:
                 data[-1]['groups'].append(subgrp.subtitle)
             for subcode in subprjinfo:
