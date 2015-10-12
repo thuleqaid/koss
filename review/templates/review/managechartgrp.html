@@ -58,9 +58,27 @@
 								{% endfor %}
 							</tbody>
 						</table>
-						<button type="submit" class="btn btn-primary">OK</button>
-						<input type="hidden" name="chartindex" value="{{ forloop.counter0 }}">
-						<input type="hidden" name="initial" value="{{ initial }}">
+						<div class="switch">
+							{% if item.allowall %}
+								<input type="checkbox" id="id_allowall" name="allowall" checked/>
+							{% else %}
+								<input type="checkbox" id="id_allowall" name="allowall" />
+							{% endif %}
+							<label for="id_allowall">允许所有人修改</label>
+						</div>
+						<div class="switch">
+							{% if item.valid %}
+								<input type="checkbox" id="id_valid" name="valid" checked/>
+							{% else %}
+								<input type="checkbox" id="id_valid" name="valid" />
+							{% endif %}
+							<label for="id_valid">有效</label>
+						</div>
+						{% if item.savable %}
+							<button type="submit" class="btn btn-primary">OK</button>
+							<input type="hidden" name="chartindex" value="{{ forloop.counter0 }}">
+							<input type="hidden" name="initial" value="{{ initial }}">
+						{% endif %}
 					</form>
 				</div>
 			{% endfor %}

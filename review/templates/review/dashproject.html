@@ -6,13 +6,33 @@
 {% block body %}
 {{ block.super }}
 <div class="container">
+<ul>
+	{% for group in chartinfo.group %}
+		<li><a href="javascript:void(0)" onclick="switchGroup({{ forloop.counter0 }})">{{ group.title }}</a></li>
+	{% endfor %}
+</ul>
 <div id="container"></div>
+<div class="switch">
+	{% for item in chartinfo.reportstatus %}
+		<input type="checkbox" id="report_{{ forloop.counter }}" checked="checked" onchange="toggleChartStatus(this, {{ forloop.counter0 }})"/>
+		<label for="report_{{ forloop.counter }}">{{ item }}</label>
+	{% endfor %}
+</div>
+{% for group in chartinfo.group %}
+	<div id="chartgroup-{{ forloop.counter0 }}" class="switch chartgroupcontrol{% if forloop.counter0 > 0 %} hide{% endif %}">
+		{% for item in group.stackgroups %}
+			<input type="checkbox" id="stack_{{ forloop.parentloop.counter }}_{{ forloop.counter }}" checked="checked" onchange="toggleChartGroup(this, {{ forloop.counter0 }})"/>
+			<label for="stack_{{ forloop.parentloop.counter }}_{{ forloop.counter }}">{{ item }}</label>
+		{% endfor %}
+	</div>
+{% endfor %}
+{% for group in chartinfo.group %}
+<input type="hidden" id="series-{{ forloop.counter0 }}" value="[{% for serie in group.series %} { name: '{{ serie.name }}', data: {{ serie.data|safe }}, stack: '{{ serie.stack }}' }, {% endfor %}]" />
+{% endfor %}
 </div>
 <script type="text/javascript" src="{% static 'review/highcharts/highcharts.js' %}"></script>
 <script type="text/javascript">
-	var chart1;
-	$(document).ready(function() {
-		chart1 = new Highcharts.Chart({
+	var options = {
 			chart: {
 				renderTo: 'container',
 				type: 'column',
@@ -30,13 +50,15 @@
 				},
 				stackLabels: {
 					enabled: true,
+					formatter: function() {
+						return this.stack + ":" + this.total;
+					},
 					style: {
 						fontWeight: 'bold',
 						color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray',
 					}
 				},
 				min: 0,
-				max: {{ chartinfo.maxcount }}
 			},
 			plotOptions: {
 				column: {
@@ -52,20 +74,50 @@
 					return '<b>'+this.x+'</b> - '+this.series.name+':'+this.y+'<br>'+this.point.extra;
 				}
 			},
-			series: [{
-				name: '未处理',
-				data: {{ chartinfo.c_null|safe }}
-				}, {
-				name: '不可关闭',
-				data: {{ chartinfo.c_ng|safe }}
-				}, {
-				name: '可关闭',
-				data: {{ chartinfo.c_ok|safe }}
-				}, {
-				name: '已关闭',
-				data: {{ chartinfo.c_locked|safe }}
-				}]
-			});
+			series: [
+				{% for serie in chartinfo.group.0.series %}
+					{
+						name: '{{ serie.name }}',
+						data: {{ serie.data|safe }},
+						stack: '{{ serie.stack }}'
+					},
+				{% endfor %}
+				]
+			};
+	var chart1;
+	$(document).ready(function() {
+		chart1 = new Highcharts.Chart(options);
 	});
+	function toggleChartStatus(element, startidx) {
+		var step = {{ chartinfo.reportstatus|length }};
+		if (element.checked == true) {
+			for (var idx = startidx; idx < chart1.series.length; idx += step) {
+				chart1.series[idx].show();
+			}
+		} else {
+			for (var idx = startidx; idx < chart1.series.length; idx += step) {
+				chart1.series[idx].hide();
+			}
+		}
+	}
+	function toggleChartGroup(element, startidx) {
+		var step = {{ chartinfo.reportstatus|length }};
+		if (element.checked == true) {
+			for (var idx = startidx * step; idx < startidx * step + step; idx += 1) {
+				chart1.series[idx].show();
+			}
+		} else {
+			for (var idx = startidx * step; idx < startidx * step + step; idx += 1) {
+				chart1.series[idx].hide();
+			}
+		}
+	}
+	function switchGroup(groupidx) {
+		$('.chartgroupcontrol').addClass('hide');
+		$('#chartgroup-'+groupidx).removeClass('hide');
+		var data=$('#series-'+groupidx)[0].value;
+		options.series = eval(data);
+		chart1 = new Highcharts.Chart(options);
+	}
 </script>
 {% endblock %}

@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import json
 import datetime
+import itertools
 from django.contrib.auth.models import User, Group
 from django.http import Http404
 from .models import *
@@ -260,7 +261,7 @@ def getProjectInfo(project):
     # value:{'checklist':checklist-obj,'subproject':dict1, 'c_locked':N1, 'c_ok':N2, 'c_ng':N3}
     #   dict1:
     #      key:subproject-code
-    #      value:{'subproject':subproject-obj, 'report':[(report-obj,report-status),...], 'c_locked':N1, 'c_ok':N2, 'c_ng':N3}
+    #      value:{'subproject':subproject-obj, 'author':[username,...], 'report':[(report-obj,report-status),...], 'c_locked':N1, 'c_ok':N2, 'c_ng':N3}
     for chk in chklist:
         outinfo[chk.code] = {'checklist': chk, 'subproject':{}}
         chkreports = [x for x in reports if x.listcode == chk.code]
@@ -268,7 +269,7 @@ def getProjectInfo(project):
         count0_lockable = 0
         count0_unlockable = 0
         for subp in subprjlist:
-            outinfo[chk.code]['subproject'][subp.code] = {'subproject':subp, 'report':[]}
+            outinfo[chk.code]['subproject'][subp.code] = {'subproject':subp, 'report':[], 'author':[getUserName(x) for x in getAuthors(subp.code)] }
             count_lock = 0
             count_lockable = 0
             count_unlockable = 0
@@ -400,3 +401,61 @@ def getSubProjects(project, status=1):
     else:
         subplist = []
     return subplist
+
+def getChartInfo(prjinfo, *groupcodes):
+    # chartinfo = {'checklist':[checklist-title,...], 'reportstatus':[status,...],
+    #              'group':{'code':chartgroupcode, 'series':[...], 'stackgroups':[groupname,...]}}
+    chartinfo = {'checklist':[], 'group':[]}
+    for chk in sorted(prjinfo.keys()):
+        chartinfo['checklist'].append(prjinfo[chk]['checklist'].title)
+    liststatus = ('已关闭', '可关闭', '不可关闭', '未检查')
+    chartinfo['reportstatus'] = list(liststatus)
+    # get authors of subprojects
+    authors = {}
+    chk = list(prjinfo.keys())[0]
+    for subpcode in sorted(prjinfo[chk]['subproject'].keys()):
+        authors[subpcode] = list(prjinfo[chk]['subproject'][subpcode]['author'])
+
+    allcodes = sorted(list(groupcodes))
+    allcodes.insert(0,'')
+    for groupcode in allcodes:
+        if groupcode:
+            chartgroups = list(ChartGroup.latest('WHERE code="%s"'%(groupcode,)))
+            if len(chartgroups) > 0:
+                chartgroup = chartgroups[0]
+                groups = [ChartGroup.Group(*x) for x in json.loads(chartgroup.details)]
+                groupname = chartgroup.title
+            else:
+                continue
+        else:
+            groups = [ChartGroup.Group('全体',list(sorted(prjinfo[chk]['subproject'].keys())))]
+            groupname = '全体'
+        chartinfo['group'].append({'code':groupcode, 'title':groupname, 'series':[]})
+        groupnames = tuple(x.subtitle for x in groups)
+        chartinfo['group'][-1]['stackgroups'] = list(groupnames)
+        datakeys = tuple(itertools.product(groupnames, liststatus))
+        for key in datakeys:
+            chartinfo['group'][-1]['series'].append({'name':'.'.join(key),'stack':key[0],'data':[]})
+        for chk in sorted(prjinfo.keys()):
+            subpnames = {}
+            for key in datakeys:
+                subpnames[key] = []
+            for subpcode in sorted(prjinfo[chk]['subproject'].keys()):
+                if prjinfo[chk]['subproject'][subpcode]['c_ng'] > 0:
+                    # NG Reports exist
+                    tmp_cate = liststatus[2]
+                elif prjinfo[chk]['subproject'][subpcode]['c_ok'] > 0:
+                    # Unlocked OK Reports exist
+                    tmp_cate = liststatus[1]
+                elif prjinfo[chk]['subproject'][subpcode]['c_locked'] > 0:
+                    # All Reports are locked
+                    tmp_cate = liststatus[0]
+                else:
+                    # No Report
+                    tmp_cate = liststatus[3]
+                hitgroups = [x for x in groups if subpcode in x.subprjs]
+                for hitgroup in hitgroups:
+                    subpnames[(hitgroup.subtitle,tmp_cate)].append(prjinfo[chk]['subproject'][subpcode]['subproject'].title + ' : ' + ','.join(authors.get(subpcode,[])))
+            for idx,key in enumerate(datakeys):
+                chartinfo['group'][-1]['series'][idx]['data'].append({'y':len(subpnames[key]),'extra':"  " + "<br>  ".join(subpnames[key])})
+    return chartinfo

@@ -36,7 +36,7 @@ class BaseVersionTable(models.Model):
         return same
     @classmethod
     def nextCode(cls, category):
-        codes = cls.objects.filter(code__startswith='%s'%(category,)).order_by('-code')[:1]
+        codes = cls.objects.filter(code__regex=r'%s\d{%d}'%(category,CONST_CODE_NUMBER_LEN)).order_by('-code')[:1]
         if len(codes) > 0:
             code1, code2 = codes[0].splitCode()
             code2 += 1

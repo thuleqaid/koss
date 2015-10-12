@@ -1013,6 +1013,16 @@ def managechartgrp(request, projectcode):
         flag_changed = False
         newgroup = []
         newdata = []
+        if request.POST.get('valid','').strip() == '':
+            valid = False
+        else:
+            valid = True
+        if request.POST.get('allowall','').strip() == '':
+            allowall = False
+        else:
+            allowall = True
+        if valid != initial[chartidx]['valid'] or allowall != initial[chartidx]['allowall']:
+            flag_changed = True
         for idx in range(len(initial[chartidx]['groups'])):
             newval = request.POST.get('group-{}-{}'.format(chartidx, idx),'').strip()
             newgroup.append(newval)
@@ -1058,23 +1068,47 @@ def managechartgrp(request, projectcode):
                         details.append(ChartGroup.Group(grp, subcodes))
                 chartobj.details = json.dumps(details)
                 chartobj.author = request.user
+                chartobj.valid = valid
+                chartobj.allowall = allowall
                 chartobj.id = None
                 chartobj.version += 1
                 chartobj.save()
         return HttpResponseRedirect(reverse('review:projectview', args=(projectcode,)))
     else:
+        prj = getProject(projectcode)
+        permlevel = permissionCheck(request, 3, prj)
         subprjs = getSubProjects(projectcode)
         subprjinfo = []
         for subprj in subprjs:
             subprjinfo.append([subprj.code, subprj.title])
         charts = list(ChartGroup.latest('WHERE project="%s"'%(projectcode,)))
         data = []
-        # value: {'title':'...', 'code':'...', 'groups':[group-title,...], 'data':...}
+        # value: {'title':'...', 'code':'...', 'valid':T/F, 'allowall':T/F, 'savable':T/F,
+        #         'groups':[group-title,...], 'data':...}
         #   data: switchInfo[i][j] i=0..count_subprjs-1, j=0..count_subgrps
         #     switchInfo(j=0): {'code':subproject-code 'title':subproject-title }
         #     switchInfo(j>0): {'id':'...', 'checked':T/F }
         for chart in charts:
-            data.append({'title':chart.title, 'code':chart.code, 'groups':[], 'data':[]})
+            data.append({'title':chart.title, 'code':chart.code, 'valid':chart.valid, 'allowall':chart.allowall, 'groups':[], 'data':[]})
+            # set 'savable' for every chart
+            if permlevel > 3:
+                # project administrators
+                savable = True
+            else:
+                if chart.valid:
+                    if chart.allowall:
+                        # allow everyone to modify
+                        savable = True
+                    else:
+                        savable = False
+                else:
+                    savable = False
+            if not savable:
+                # check whether current author is the author of the chartgroup
+                testchart = list(ChartGroup.objects.filter(code=chart.code).filter(version=1))[0]
+                if request.user == testchart.author:
+                    savable = True
+            data[-1]['savable'] = savable
             subgroups = [ChartGroup.Group(*x) for x in json.loads(chart.details)]
             subgroups.append(ChartGroup.Group('',[]))
             for subgrp in subgroups:
@@ -1088,8 +1122,6 @@ def managechartgrp(request, projectcode):
                         checked = False
                     data[-1]['data'][-1].append({'id':'chk-{}-{}-{}'.format(chart.code,subcode[0],idx),'checked':checked})
         navbar = []
-        prj = getProject(projectcode)
-        permlevel = permissionCheck(request, 3, prj)
         navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
         navbar.append({'link':'#', 'title':'Manage ChartGroup', 'param':['',]})
         return render(request, 'review/managechartgrp.html', {'projectcode':projectcode, 'data':data, 'navbar':navbar, 'initial':json.dumps(data)})
@@ -1561,37 +1593,8 @@ def projectdash(request, projectcode):
     prj = getProject(projectcode)
     permlevel = permissionCheck(request, 2, prj)
     prjinfo = getProjectInfo(prj)
-    datakeys = ('c_locked', 'c_ok', 'c_ng', 'c_null')
-    chartinfo = { 'checklist':[] }
-    # get authors of subprojects
-    authors = {}
-    chk = list(prjinfo.keys())[0]
-    for subpcode in sorted(prjinfo[chk]['subproject'].keys()):
-        authors[subpcode] = [getUserName(x) for x in getAuthors(subpcode)]
-    for key in datakeys:
-        chartinfo[key] = []
-    for chk in sorted(prjinfo.keys()):
-        chartinfo['maxcount'] = len(prjinfo[chk]['subproject'])
-        chartinfo['checklist'].append(prjinfo[chk]['checklist'].title)
-        subpnames = {}
-        for key in datakeys:
-            subpnames[key] = []
-        for subpcode in sorted(prjinfo[chk]['subproject'].keys()):
-            if prjinfo[chk]['subproject'][subpcode]['c_ng'] > 0:
-                # NG Reports exist
-                tmp_cate = 'c_ng'
-            elif prjinfo[chk]['subproject'][subpcode]['c_ok'] > 0:
-                # Unlocked OK Reports exist
-                tmp_cate = 'c_ok'
-            elif prjinfo[chk]['subproject'][subpcode]['c_locked'] > 0:
-                # All Reports are locked
-                tmp_cate = 'c_locked'
-            else:
-                # No Report
-                tmp_cate = 'c_null'
-            subpnames[tmp_cate].append(prjinfo[chk]['subproject'][subpcode]['subproject'].title + ' : ' + ','.join(authors.get(subpcode,[])))
-        for key in datakeys:
-            chartinfo[key].append({'y':len(subpnames[key]),'extra':"  " + "<br>  ".join(subpnames[key])})
+    chartgroups = [x.code for x in ChartGroup.latest('WHERE project="%s"'%(prj.code,)) if x.valid]
+    chartinfo = getChartInfo(prjinfo, *chartgroups)
     navbar = []
     navbar.append({'link':reverse('review:projectview', args=(projectcode,)), 'title':prj.title, 'param':['review:projectview', projectcode]})
     navbar.append({'link':'#', 'title':'Dashboard', 'param':['',]})
