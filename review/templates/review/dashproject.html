@@ -41,6 +41,11 @@
 			title: {
 				text: 'Checklist Status'
 			},
+			colors: {{ chartinfo.colors|safe }},
+			legend: {
+				itemWidth: 150,
+				width: 150 * {{ chartinfo.reportstatus|length }},
+			},
 			xAxis: {
 				categories: {{ chartinfo.checklist|safe }}
 			},

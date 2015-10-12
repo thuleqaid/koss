@@ -403,13 +403,17 @@ def getSubProjects(project, status=1):
     return subplist
 
 def getChartInfo(prjinfo, *groupcodes):
-    # chartinfo = {'checklist':[checklist-title,...], 'reportstatus':[status,...],
+    # chartinfo = {'checklist':[checklist-title,...], 'reportstatus':[status,...], 'colors':[color,...],
     #              'group':{'code':chartgroupcode, 'series':[...], 'stackgroups':[groupname,...]}}
+    defaultcolors = ['#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9',
+                     '#f15c80', '#e4d354', '#8085e8', '#8d4653', '#91e8e1']
     chartinfo = {'checklist':[], 'group':[]}
     for chk in sorted(prjinfo.keys()):
         chartinfo['checklist'].append(prjinfo[chk]['checklist'].title)
     liststatus = ('已关闭', '可关闭', '不可关闭', '未检查')
     chartinfo['reportstatus'] = list(liststatus)
+    colorlength = min((len(defaultcolors), len(liststatus)))
+    chartinfo['colors'] = defaultcolors[:colorlength]
     # get authors of subprojects
     authors = {}
     chk = list(prjinfo.keys())[0]
