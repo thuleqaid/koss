@@ -1496,6 +1496,7 @@ def viewproject(request, projectcode):
     prjlist = list(Project.latest('WHERE code="%s"'%(projectcode,)))
     if len(prjlist) > 0:
         prj = prjlist[0]
+        getProjectDailyInfo(prj)
         chks = CheckList.latest('WHERE project="%s"' % (prj.code,))
         grps = CheckGroup.latest('WHERE project="%s"' % (prj.code,))
         grpmap = {}

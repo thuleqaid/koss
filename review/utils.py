@@ -297,6 +297,61 @@ def getProjectInfo(project):
         outinfo[chk.code]['c_ng'] = count0_unlockable
     return outinfo
 
+def getProjectDailyInfo(project):
+    if isinstance(project, Project):
+        prjcode = project.code
+    else:
+        prjcode = project
+    subprjlist = getSubProjects(prjcode)
+    chklist = list(CheckList.latest('WHERE project="%s"'%(prjcode,)))
+    chkcode = [x.code for x in chklist]
+    reports = list(CheckListResult.objects.filter(listcode__in = chkcode).order_by('update_time'))
+    # dt1, dt2: first and last modified datetime in UTC
+    dt1 = reports[0].update_time + datetime.timedelta(hours=8)
+    dt1 = datetime.datetime(dt1.year, dt1.month, dt1.day) + datetime.timedelta(hours=15, minutes=59, seconds=59)
+    dt2 = reports[-1].update_time + datetime.timedelta(hours=8)
+    dt2 = datetime.datetime(dt2.year, dt2.month, dt2.day) + datetime.timedelta(hours=15, minutes=59, seconds=59)
+    outinfo = {}
+    ## key: checklist-code
+    ## value:{'checklist':checklist-obj,'subproject':dict1, 'c_locked':N1, 'c_ok':N2, 'c_ng':N3}
+    ##   dict1:
+    ##      key:subproject-code
+    ##      value:{'subproject':subproject-obj, 'author':[username,...], 'report':[(report-obj,report-status),...], 'c_locked':N1, 'c_ok':N2, 'c_ng':N3}
+    #for chk in chklist:
+        #outinfo[chk.code] = {'checklist': chk, 'subproject':{}}
+        #chkreports = [x for x in reports if x.listcode == chk.code]
+        #count0_lock = 0
+        #count0_lockable = 0
+        #count0_unlockable = 0
+        #for subp in subprjlist:
+            #outinfo[chk.code]['subproject'][subp.code] = {'subproject':subp, 'report':[], 'author':[getUserName(x) for x in getAuthors(subp.code)] }
+            #count_lock = 0
+            #count_lockable = 0
+            #count_unlockable = 0
+            #for subreport in [x for x in chkreports if x.subproject == subp.code]:
+                #outinfo[chk.code]['subproject'][subp.code]['report'].append((subreport, getReportStatus(subreport)))
+                #if subreport.lockstatus:
+                    #count_lock += 1
+                #else:
+                    #if outinfo[chk.code]['subproject'][subp.code]['report'][-1][1]['status'] == 'NG':
+                        #count_unlockable +=1
+                    #else:
+                        #count_lockable += 1
+            #outinfo[chk.code]['subproject'][subp.code]['c_locked'] = count_lock
+            #outinfo[chk.code]['subproject'][subp.code]['c_ok'] = count_lockable
+            #outinfo[chk.code]['subproject'][subp.code]['c_ng'] = count_unlockable
+            #if count_lockable + count_unlockable + count_lock > 0:
+                #if count_lockable + count_unlockable == 0:
+                    #count0_lock += 1
+                #elif count_unlockable > 0:
+                    #count0_unlockable += 1
+                #else:
+                    #count0_lockable += 1
+        #outinfo[chk.code]['c_locked'] = count0_lock
+        #outinfo[chk.code]['c_ok'] = count0_lockable
+        #outinfo[chk.code]['c_ng'] = count0_unlockable
+    return outinfo
+
 def getUserName(user):
     if isinstance(user, User):
         if user.last_name:
