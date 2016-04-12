@@ -10,6 +10,9 @@ from datetime import datetime as timezone
 from .models import *
 from .forms import *
 from .utils import *
+from openpyxl import Workbook
+import tempfile
+import os
 
 # Create your views here.
 def index(request):
@@ -1601,3 +1604,168 @@ def projectdash(request, projectcode):
     navbar.append({'link':'#', 'title':'Dashboard', 'param':['',]})
     return render(request, 'review/dashproject.html', {'chartinfo':chartinfo, 'navbar':navbar})
 
+@login_required
+def exportrecord(request, projectcode):
+    fh = tempfile.NamedTemporaryFile(delete=False)
+    dest_filename = fh.name
+    fh.close()
+    wb = Workbook()
+    ## Setting Info
+    # CheckItems
+    ws = wb.active
+    ws.title = "CheckItems"
+    chkitems = list(CheckItem.latest('WHERE project="%s"'%(projectcode,)))
+    rowno = 1
+    ws.cell('A1').value = "Code"
+    ws.cell('B1').value = "Version"
+    ws.cell('C1').value = "CreateTime"
+    ws.cell('D1').value = "Author"
+    ws.cell('E1').value = "Title"
+    ws.cell('F1').value = "Details"
+    for item in chkitems:
+        rowno += 1
+        ws.cell('A%d'%(rowno,)).value = item.code
+        ws.cell('B%d'%(rowno,)).value = item.version
+        ws.cell('C%d'%(rowno,)).value = item.update_time
+        ws.cell('D%d'%(rowno,)).value = getUserName(item.author)
+        ws.cell('E%d'%(rowno,)).value = item.title
+        ws.cell('F%d'%(rowno,)).value = item.details
+    # CheckGroups
+    ws = wb.create_sheet()
+    ws.title = "CheckGroups"
+    chkgroups = list(CheckGroup.latest('WHERE project="%s"'%(projectcode,)))
+    ws.cell('A1').value = "Code"
+    ws.cell('B1').value = "Version"
+    ws.cell('C1').value = "CreateTime"
+    ws.cell('D1').value = "Author"
+    ws.cell('E1').value = "Title"
+    ws.cell('F1').value = "Details"
+    for item in chkgroups:
+        rowno += 1
+        ws.cell('A%d'%(rowno,)).value = item.code
+        ws.cell('B%d'%(rowno,)).value = item.version
+        ws.cell('C%d'%(rowno,)).value = item.update_time
+        ws.cell('D%d'%(rowno,)).value = getUserName(item.author)
+        ws.cell('E%d'%(rowno,)).value = item.title
+        ws.cell('F%d'%(rowno,)).value = item.details
+    # CheckLists
+    ws = wb.create_sheet()
+    ws.title = "CheckLists"
+    chklists = list(CheckList.latest('WHERE project="%s"'%(projectcode,)))
+    ws.cell('A1').value = "Code"
+    ws.cell('B1').value = "Version"
+    ws.cell('C1').value = "CreateTime"
+    ws.cell('D1').value = "Author"
+    ws.cell('E1').value = "Title"
+    ws.cell('F1').value = "Groups"
+    for item in chklists:
+        rowno += 1
+        ws.cell('A%d'%(rowno,)).value = item.code
+        ws.cell('B%d'%(rowno,)).value = item.version
+        ws.cell('C%d'%(rowno,)).value = item.update_time
+        ws.cell('D%d'%(rowno,)).value = getUserName(item.author)
+        ws.cell('E%d'%(rowno,)).value = item.title
+        ws.cell('F%d'%(rowno,)).value = item.groups
+    # SubProjects
+    ws = wb.create_sheet()
+    ws.title = "SubProjects"
+    subprjs = list(SubProject.latest('WHERE project="%s"'%(projectcode,)))
+    ws.cell('A1').value = "Code"
+    ws.cell('B1').value = "Version"
+    ws.cell('C1').value = "CreateTime"
+    ws.cell('D1').value = "Author"
+    ws.cell('E1').value = "Title"
+    ws.cell('F1').value = "Details"
+    for item in subprjs:
+        rowno += 1
+        ws.cell('A%d'%(rowno,)).value = item.code
+        ws.cell('B%d'%(rowno,)).value = item.version
+        ws.cell('C%d'%(rowno,)).value = item.update_time
+        ws.cell('D%d'%(rowno,)).value = getUserName(item.author)
+        ws.cell('E%d'%(rowno,)).value = item.title
+        ws.cell('F%d'%(rowno,)).value = item.details
+    ## Records
+    ws = wb.create_sheet()
+    ws.title = "Reports"
+    rowno = 0
+    ws.cell('A1').value = "Code"
+    ws.cell('B1').value = "Version"
+    ws.cell('C1').value = "CreateTime"
+    ws.cell('D1').value = "Author"
+    ws.cell('E1').value = "SubProject"
+    ws.cell('F1').value = "Title"
+    ws.cell('G1').value = "ListCode"
+    ws.cell('H1').value = "ListVersion"
+    ws.cell('I1').value = "IG"
+    ws.cell('J1').value = "OK"
+    ws.cell('K1').value = "NG"
+    ws.cell('L1').value = "BUGA"
+    ws.cell('M1').value = "BUGC"
+    ws.cell('N1').value = "BUGD"
+    ws2 = wb.create_sheet()
+    ws2.title = "Bugs"
+    rowno2 = 0
+    ws2.cell('A1').value = "Code"
+    ws2.cell('B1').value = "Version"
+    ws2.cell('C1').value = "CreateTime"
+    ws2.cell('D1').value = "Author"
+    ws2.cell('E1').value = "ItemCode"
+    ws2.cell('F1').value = "ItemVersion"
+    ws2.cell('G1').value = "Question"
+    ws2.cell('H1').value = "Answer"
+    ws2.cell('I1').value = "Status"
+    ws2.cell('J1').value = "Level"
+    # CheckListResult
+    reports = list(CheckListResult.latest())
+    reports0 = list(CheckListResult.objects.filter(version = 1))
+    # CheckBugItem
+    bugs = list(CheckBugItem.latest())
+    for chk in chklists:
+        for report in [x for x in reports if x.listcode == chk.code]:
+            firstver = list([xx for xx in reports0 if xx.code == report.code])[0]
+            grouplist = list(CheckGroupResult.objects.filter(pk__in=json.loads(report.groups)))
+            keylist = ('IG', 'OK', 'NG', 'BUGA', 'BUGC', 'BUGD')
+            count = dict(zip(keylist,[0]*len(keylist)))
+            count['bugs'] = []
+            for group in grouplist:
+                summary = json.loads(group.summary)
+                for key in keylist:
+                    count[key] += summary[key]
+                buglist = [CheckGroupResult.Result(*xx) for xx in json.loads(group.buglist)]
+                count['bugs'].extend([xx.id for xx in buglist])
+            count['author']=getUserName(firstver.author)
+            rowno += 1
+            ws.cell('A%d'%(rowno,)).value = report.code
+            ws.cell('B%d'%(rowno,)).value = report.version
+            ws.cell('C%d'%(rowno,)).value = report.update_time
+            ws.cell('D%d'%(rowno,)).value = count['author']
+            ws.cell('E%d'%(rowno,)).value = report.subproject
+            ws.cell('F%d'%(rowno,)).value = report.title
+            ws.cell('G%d'%(rowno,)).value = report.listcode
+            ws.cell('H%d'%(rowno,)).value = report.listversion
+            ws.cell('I%d'%(rowno,)).value = count['IG']
+            ws.cell('J%d'%(rowno,)).value = count['OK']
+            ws.cell('K%d'%(rowno,)).value = count['NG']
+            ws.cell('L%d'%(rowno,)).value = count['BUGA']
+            ws.cell('M%d'%(rowno,)).value = count['BUGC']
+            ws.cell('N%d'%(rowno,)).value = count['BUGD']
+            for bug in [xx for xx in bugs if xx.id in count['bugs']]:
+                rowno2 += 1
+                ws2.cell('A%d'%(rowno,)).value = bug.code
+                ws2.cell('B%d'%(rowno,)).value = bug.version
+                ws2.cell('C%d'%(rowno,)).value = bug.update_time
+                ws2.cell('D%d'%(rowno,)).value = getUserName(bug.author)
+                ws2.cell('E%d'%(rowno,)).value = bug.itemcode
+                ws2.cell('F%d'%(rowno,)).value = bug.itemversion
+                ws2.cell('G%d'%(rowno,)).value = bug.question
+                ws2.cell('H%d'%(rowno,)).value = bug.answer
+                ws2.cell('I%d'%(rowno,)).value = bug.status
+                ws2.cell('J%d'%(rowno,)).value = bug.level
+    wb.save(filename=dest_filename)
+    fh = open(dest_filename, 'rb')
+    out = fh.read()
+    fh.close()
+    os.unlink(dest_filename)
+    response = HttpResponse(out,content_type='application/octet-stream')
+    response['Content-Disposition'] = 'attachment; filename=report.xlsx'
+    return response

@@ -8,6 +8,7 @@ urlpatterns = [
 	url(r'^project/(?P<projectcode>\w+)$', views.viewproject, name='projectview'),
 	url(r'^project/(?P<projectcode>\w+)/dashboard$', views.projectdash, name='projectdash'),
 	url(r'^project/(?P<projectcode>\w+)/edit$', views.editproject, name='projectedit'),
+	url(r'^project/(?P<projectcode>\w+)/export$', views.exportrecord, name='export'),
 	url(r'^project/(?P<projectcode>\w+)/import/checkitem$', views.importchkitm, name='importcheckitem'),
 	url(r'^project/(?P<projectcode>\w+)/manage/chartgroup$', views.managechartgrp, name='managechartgroup'),
 	url(r'^project/(?P<projectcode>\w+)/manage/checkgroup$', views.managechkgrp, name='managecheckgroup'),
